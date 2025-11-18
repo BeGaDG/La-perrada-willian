@@ -20,7 +20,7 @@ service cloud.firestore {
      */
     match /products/{productId} {
       allow get, list: if true;
-      allow create, update, delete: if isSignedIn(); 
+      allow create, update, delete: if isAdmin(); 
     }
 
     /**
@@ -34,23 +34,18 @@ service cloud.firestore {
      */
     match /orders/{orderId} {
       allow create: if true;
-      allow get, list, update: if isSignedIn();
+      allow get, list, update: if isAdmin();
       allow delete: if false;
     }
 
     /**
-     * @description Allows users to create order items and only read/write their own order items.
+     * @description Allows the creation of order items when an order is created.
+     * Denies any other type of access.
      * @path /orders/{orderId}/orderItems/{orderItemId}
-     * @allow (create) Authenticated user creates a new order item under their own order.
-     * @allow (get, list) Authenticated user reads their own order items.
-     * @deny (get, list) Authenticated user attempts to read another user's order items.
-     * @deny (update, delete) Non-owner attempts to update or delete the order item.
-     * @principle Enforces user-ownership for order items based on customerId in parent order document.
      */
     match /orders/{orderId}/orderItems/{orderItemId} {
-      allow create: if isSignedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid;
-      allow get, list: if isSignedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid;
-      allow update, delete: if false; // no updates or deletes.
+      allow create: if true;
+      allow get, list, update, delete: if false;
     }
 
     /**
@@ -69,7 +64,16 @@ service cloud.firestore {
      */
     match /categories/{categoryId} {
       allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Collection to store admin user UIDs.
+     * @path /admins/{userId}
+     */
+    match /admins/{userId} {
+      // Only other admins should be able to see/manage who is an admin.
+      allow read, write: if isAdmin();
     }
 
     // Helper functions
@@ -81,8 +85,14 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-   function isExistingOwner(userId) {
+    function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+             (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+              request.auth.uid == 'TIJ6ZblJZgfW7fz30deiqfqYtUg1');
     }
   }
 }
@@ -96,5 +106,3 @@ service firebase.storage {
     }
   }
 }
-
-    

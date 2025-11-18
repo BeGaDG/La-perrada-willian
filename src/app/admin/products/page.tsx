@@ -1,6 +1,8 @@
 'use client';
 
-import { products } from "@/lib/data";
+import { useMemo } from "react";
+import { collection } from "firebase/firestore";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import {
   Table,
   TableBody,
@@ -21,8 +23,56 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Image from "next/image";
 import { ProductForm } from "./product-form";
+import type { Product } from "@/lib/types";
+import { deleteProduct } from "./product-actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
+function DeleteProductDialog({ productId }: { productId: string }) {
+  const handleDelete = async () => {
+    await deleteProduct(productId);
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+          Eliminar
+        </DropdownMenuItem>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta acción no se puede deshacer. Esto eliminará permanentemente el producto de la base de datos.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+            Sí, eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 
 export default function AdminProductsPage() {
+  const firestore = useFirestore();
+  const productsRef = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
+  const { data: products, isLoading } = useCollection<Product>(productsRef);
+
   return (
     <div>
         <div className="flex items-center justify-between mb-8">
@@ -51,7 +101,17 @@ export default function AdminProductsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => (
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center">Cargando productos...</TableCell>
+              </TableRow>
+            )}
+            {!isLoading && products?.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={6} className="text-center">No se encontraron productos. ¡Añade el primero!</TableCell>
+                </TableRow>
+            )}
+            {products?.map((product) => (
               <TableRow key={product.id}>
                  <TableCell className="hidden sm:table-cell">
                   <Image
@@ -84,7 +144,7 @@ export default function AdminProductsPage() {
                       <ProductForm productToEdit={product}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Editar</DropdownMenuItem>
                       </ProductForm>
-                      <DropdownMenuItem className="text-destructive">Eliminar</DropdownMenuItem>
+                       <DeleteProductDialog productId={product.id} />
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

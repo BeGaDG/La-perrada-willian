@@ -1,4 +1,8 @@
-import { products } from '@/lib/data';
+'use client';
+
+import { useMemo } from 'react';
+import { collection } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Product } from '@/lib/types';
 import { ProductCard } from '@/components/product-card';
 import { Menu, Flame, GlassWater, Drumstick } from 'lucide-react';
@@ -12,10 +16,18 @@ const categoryIcons: Record<string, LucideIcon> = {
 };
 
 export default function Home() {
-  const productsByCategory = products.reduce((acc, product) => {
-    (acc[product.category] = acc[product.category] || []).push(product);
-    return acc;
-  }, {} as Record<string, Product[]>);
+  const firestore = useFirestore();
+  const productsRef = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
+  const { data: products, isLoading } = useCollection<Product>(productsRef);
+
+  const productsByCategory = useMemo(() => {
+    if (!products) return {};
+    return products.reduce((acc, product) => {
+      (acc[product.category] = acc[product.category] || []).push(product);
+      return acc;
+    }, {} as Record<string, Product[]>);
+  }, [products]);
+
 
   return (
     <div>
@@ -31,6 +43,7 @@ export default function Home() {
       </section>
 
       <div className="container py-12 md:py-16">
+        {isLoading && <p className="text-center">Cargando menú...</p>}
         {Object.entries(productsByCategory).map(([category, categoryProducts]) => {
           const Icon = categoryIcons[category];
           return (

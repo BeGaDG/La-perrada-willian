@@ -1,8 +1,9 @@
 'use server';
 
 import { z } from 'zod';
-import { products } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
+import { getSdks } from '@/firebase';
+import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 
 const productSchema = z.object({
   id: z.string().optional(),
@@ -30,29 +31,50 @@ export async function saveProduct(prevState: FormState, formData: FormData): Pro
     }
 
     const { id, ...data } = validatedFields.data;
+    const { firestore } = getSdks();
 
     try {
         if (id) {
             // Update product
-            const index = products.findIndex(p => p.id === id);
-            if (index > -1) {
-                products[index] = { ...products[index], ...data };
-            }
+            const productRef = doc(firestore, 'products', id);
+            await updateDoc(productRef, data);
         } else {
             // Create new product
+            const productsCollection = collection(firestore, 'products');
             const newProduct = {
                 ...data,
-                id: `prod-${Date.now()}`,
-                imageUrl: 'https://picsum.photos/seed/new/600/400',
+                imageUrl: 'https://picsum.photos/seed/newproduct/600/400',
                 imageHint: 'food placeholder'
             };
-            products.push(newProduct);
+            await addDoc(productsCollection, newProduct);
         }
 
         revalidatePath('/admin/products');
         revalidatePath('/');
         return { message: 'Producto guardado con éxito.', success: true };
     } catch (e) {
+        console.error("Error saving product:", e);
         return { message: 'Error al guardar el producto.', success: false };
+    }
+}
+
+
+export async function deleteProduct(productId: string) {
+    if (!productId) {
+        throw new Error("Product ID is required for deletion.");
+    }
+
+    const { firestore } = getSdks();
+    const productRef = doc(firestore, 'products', productId);
+
+    try {
+        await deleteDoc(productRef);
+        console.log(`Product ${productId} deleted successfully.`);
+        
+        revalidatePath('/admin/products');
+        revalidatePath('/');
+    } catch (error) {
+        console.error("Error deleting product:", error);
+        throw new Error("Could not delete product.");
     }
 }

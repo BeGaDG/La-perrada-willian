@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from "react";
-import { collection, doc, deleteDoc, writeBatch, getDocs } from "firebase/firestore";
+import { collection, doc, deleteDoc } from "firebase/firestore";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import {
   Table,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PlusCircle, Upload, ImageIcon, Search } from "lucide-react";
+import { MoreHorizontal, PlusCircle, ImageIcon, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +36,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
-import menuData from '@/lib/menu-data.json';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,98 +92,6 @@ function DeleteProductDialog({ productId }: { productId: string }) {
   );
 }
 
-function SeedDatabaseButton() {
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
-
-  const handleSeed = async () => {
-    if (!firestore) return;
-    setIsLoading(true);
-    setIsAlertOpen(false);
-
-    try {
-      const batch = writeBatch(firestore);
-      
-      const productsSnapshot = await getDocs(collection(firestore, "products"));
-      productsSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      
-      const categoriesSnapshot = await getDocs(collection(firestore, "categories"));
-      categoriesSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-
-      const categoriesCollection = collection(firestore, "categories");
-      const categoryMap: Record<string, string> = {};
-
-      for (const categoryName of menuData.categories) {
-        const docRef = doc(categoriesCollection);
-        batch.set(docRef, { name: categoryName });
-        categoryMap[categoryName] = categoryName;
-      }
-
-      const productsRef = collection(firestore, 'products');
-      menuData.products.forEach(product => {
-        const docRef = doc(productsRef);
-        batch.set(docRef, {
-          ...product,
-          price: product.price || 0,
-          description: `Un delicioso ${product.name}`,
-          imageUrl: "", 
-          imageHint: product.imageHint || product.name,
-          category: categoryMap[product.category] || product.category
-        });
-      });
-
-      await batch.commit();
-
-      toast({
-        title: '¡Base de datos reiniciada!',
-        description: 'Todos los productos y categorías han sido eliminados y reemplazados con los datos de muestra.'
-      });
-
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: 'Error al reiniciar la base de datos',
-        description: 'No se pudieron procesar los cambios. Revisa la consola para más detalles.',
-      });
-      console.error("Error seeding database: ", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-      <AlertDialogTrigger asChild>
-        <Button variant="outline" disabled={isLoading}>
-          <Upload className="mr-2 h-4 w-4" />
-          {isLoading ? 'Cargando...' : 'Cargar Menú de Muestra'}
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Reiniciar la base de datos?</AlertDialogTitle>
-          <AlertDialogDescription>
-            ¡Atención! Esta acción eliminará TODOS los productos y categorías existentes en la base de datos y los reemplazará con los del archivo de muestra. Es ideal para empezar de cero.
-            ¿Deseas continuar?
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleSeed}>
-            Sí, reiniciar y cargar
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
         style: 'currency',
@@ -225,7 +132,6 @@ export default function AdminProductsPage() {
                   Añadir Producto
                 </Button>
               </ProductForm>
-              <SeedDatabaseButton />
             </div>
         </div>
 
@@ -284,7 +190,7 @@ export default function AdminProductsPage() {
             {!(isLoadingProducts || isLoadingCategories) && filteredProducts.length === 0 && (
                 <TableRow>
                     <TableCell colSpan={6} className="text-center h-24">
-                      {products && products.length > 0 ? "No se encontraron productos con los filtros aplicados." : "No hay productos. ¡Carga el menú de muestra o añade uno nuevo!"}
+                      {products && products.length > 0 ? "No se encontraron productos con los filtros aplicados." : "No hay productos. ¡Añade uno nuevo!"}
                     </TableCell>
                 </TableRow>
             )}

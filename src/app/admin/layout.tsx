@@ -31,11 +31,7 @@ export default function AdminLayout({
     }, [user, isUserLoading, router]);
 
     const handleSignOut = async () => {
-      if (user) {
-        await auth.signOut();
-        // Potentially delete the anonymous user if you don't want them to persist
-        // await user.delete();
-      }
+      await auth.signOut();
       router.push('/login');
     }
 

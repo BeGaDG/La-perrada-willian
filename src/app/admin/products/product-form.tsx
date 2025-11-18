@@ -39,6 +39,9 @@ export function ProductForm({ children, productToEdit }: { children: React.React
         const formData = new FormData(event.currentTarget);
         const rawData = Object.fromEntries(formData.entries());
 
+        // Ensure price is treated as a number
+        rawData.price = Number(rawData.price);
+
         const validatedFields = productSchema.safeParse(rawData);
         if (!validatedFields.success) {
             setErrors(validatedFields.error.flatten().fieldErrors);
@@ -68,7 +71,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                     const newProduct = {
                         ...data,
                         imageUrl: data.imageUrl || "",
-                        imageHint: data.category.toLowerCase()
+                        imageHint: data.name.toLowerCase().split(' ').slice(0,2).join(' ') || data.category.toLowerCase()
                     };
                     await addDoc(productsCollection, newProduct);
                 }
@@ -119,7 +122,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="price" className="text-right">Precio</Label>
-                            <Input id="price" name="price" type="number" step="0.01" defaultValue={productToEdit?.price} className="col-span-3" />
+                            <Input id="price" name="price" type="number" step="1" defaultValue={productToEdit?.price} className="col-span-3" />
                              {errors?.price && <p className="col-span-4 text-xs text-destructive text-right">{errors.price[0]}</p>}
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">

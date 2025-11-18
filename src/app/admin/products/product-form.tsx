@@ -19,7 +19,7 @@ import { uploadFile } from '@/lib/cloudinary/actions';
 
 const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
-  description: z.string().min(10, "La descripción debe tener al menos 10 caracteres."),
+  description: z.string().optional(),
   price: z.coerce.number().min(0, "El precio no puede ser negativo."),
   category: z.string().min(1, "La categoría es obligatoria."),
   imageUrl: z.string().url("Debe ser una URL válida.").or(z.literal("")),
@@ -180,6 +180,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                     const productsCollection = collection(firestore, 'products');
                     const newProduct = {
                         ...data,
+                        description: data.description || '',
                         imageHint: data.name.toLowerCase().split(' ').slice(0,2).join(' ') || data.category.toLowerCase()
                     };
                     await addDoc(productsCollection, newProduct);

@@ -131,7 +131,7 @@ function SeedDatabaseButton() {
           price: product.price || 0,
           description: `Un delicioso ${product.name}`,
           imageUrl: product.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`,
-          imageHint: product.imageHint,
+          imageHint: product.imageHint || product.name,
           category: categoryMap[product.category] || product.category
         });
       });

@@ -41,7 +41,7 @@ export function CartSheet({ open, onOpenChange }: { open: boolean, onOpenChange:
                 {items.map(item => (
                   <div key={item.product.id} className="flex items-start gap-4">
                     <Image 
-                      src={item.product.imageUrl} 
+                      src={item.product.imageUrl || `https://placehold.co/64x64/E2E8F0/A0AEC0?text=Sin+Imagen`} 
                       alt={item.product.name} 
                       width={64} 
                       height={64} 

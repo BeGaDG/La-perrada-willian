@@ -35,7 +35,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <CardHeader className="p-0">
         <div className="aspect-[3/2] relative">
           <Image
-            src={product.imageUrl}
+            src={product.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`}
             alt={product.name}
             fill
             className="object-cover"

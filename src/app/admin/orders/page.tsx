@@ -64,6 +64,7 @@ function PrintTicketDialog({ order }: { order: Order }) {
           <p>Pedido: #{order.id.substring(0, 5)}</p>
           <p>Cliente: {order.customerName}</p>
           <p>Dirección: {order.customerAddress}</p>
+          <p>Teléfono: {order.customerPhone}</p>
           <p>Fecha: {formattedDate}</p>
           <p>-------------------------</p>
           <div className='space-y-1 my-2'>
@@ -138,13 +139,7 @@ export default function AdminOrdersPage() {
     );
 
     // Call server action in the background - DISABLED FOR DEMO
-    // updateOrderStatus(orderId, next).catch(error => {
-    //   console.error("Failed to update order status:", error);
-    //   // Revert UI change on error
-    //   setLocalOrders(prevOrders =>
-    //     prevOrders.map(o => o.id === orderId ? { ...o, status: orderToUpdate.status } : o)
-    //   );
-    // });
+    // updateOrderStatus(orderId, next);
   };
 
   const ordersByStatus = useMemo(() => {

@@ -33,10 +33,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
 import menuData from '@/lib/menu-data.json';
-import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 
 
 function DeleteProductDialog({ productId }: { productId: string }) {
@@ -117,7 +117,7 @@ function SeedDatabaseButton() {
           ...product,
           price: product.price || 0,
           description: product.description || `Un delicioso ${product.name}`,
-          imageUrl: product.imageUrl || `https://picsum.photos/seed/${product.name.replace(/\s/g, '')}/600/400`,
+          imageUrl: product.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`,
           imageHint: product.category.toLowerCase(),
           category: categoryMap[product.category] || product.category
         });
@@ -143,7 +143,7 @@ function SeedDatabaseButton() {
   }
 
   return (
-    <AlertDialog>
+     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button variant="outline" disabled={isLoading}>
           <Upload className="mr-2 h-4 w-4" />
@@ -165,7 +165,6 @@ function SeedDatabaseButton() {
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
-    </AlertDialog>
   );
 }
 
@@ -269,5 +268,3 @@ export default function AdminProductsPage() {
     </div>
   );
 }
-
-    

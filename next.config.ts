@@ -23,12 +23,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-        port: '',
-        pathname: '/**',
-      },
-      {
         protocol: "https",
         hostname: "firebasestorage.googleapis.com",
         port: "",
@@ -39,5 +33,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
-    

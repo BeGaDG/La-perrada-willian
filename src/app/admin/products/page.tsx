@@ -91,6 +91,7 @@ function SeedDatabaseButton() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
 
   const handleSeed = async () => {
     if (!firestore) return;
@@ -151,11 +152,12 @@ function SeedDatabaseButton() {
       console.error("Error seeding database: ", error);
     } finally {
       setIsLoading(false);
+      setIsAlertOpen(false);
     }
   }
 
   return (
-    <AlertDialog>
+    <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
       <AlertDialogTrigger asChild>
         <Button variant="outline" disabled={isLoading}>
           <Upload className="mr-2 h-4 w-4" />

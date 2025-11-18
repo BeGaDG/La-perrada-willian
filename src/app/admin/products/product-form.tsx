@@ -33,25 +33,38 @@ function ImageUploader({ value, onValueChange }: { value: string; onValueChange:
         if (!file) return;
 
         setIsUploading(true);
-        const formData = new FormData();
-        formData.append('image', file);
 
         try {
-            const response = await fetch('/api/upload', {
+            // 1. Get signature from our API
+            const sigResponse = await fetch('/api/sign-image');
+            const { signature, timestamp } = await sigResponse.json();
+
+            // 2. Upload directly to Cloudinary
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('signature', signature);
+            formData.append('timestamp', timestamp);
+            formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
+            
+            const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!}/image/upload`;
+
+            const response = await fetch(cloudinaryUrl, {
                 method: 'POST',
                 body: formData,
             });
 
             if (!response.ok) {
-                throw new Error('Upload failed');
+                 const errorData = await response.json();
+                 console.error('Cloudinary upload error details:', errorData);
+                 throw new Error('Cloudinary upload failed.');
             }
 
             const result = await response.json();
-            onValueChange(result.imageUrl);
+            onValueChange(result.secure_url);
             toast({ title: "Imagen subida", description: "La imagen se ha subido con éxito a Cloudinary." });
         } catch (error) {
             console.error("Upload error:", error);
-            toast({ variant: "destructive", title: "Error", description: "No se pudo subir la imagen." });
+            toast({ variant: "destructive", title: "Error de Subida", description: "No se pudo subir la imagen. Revisa la consola para más detalles." });
         } finally {
             setIsUploading(false);
         }

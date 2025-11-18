@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from "react";
-import { collection, doc, deleteDoc, writeBatch } from "firebase/firestore";
+import { collection, doc, deleteDoc, writeBatch, getDocs } from "firebase/firestore";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import {
   Table,
@@ -99,6 +99,18 @@ function SeedDatabaseButton() {
     try {
       const batch = writeBatch(firestore);
       
+      // Delete existing products
+      const productsSnapshot = await getDocs(collection(firestore, "products"));
+      productsSnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      
+      // Delete existing categories
+      const categoriesSnapshot = await getDocs(collection(firestore, "categories"));
+      categoriesSnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
       // Seed Categories
       const categoriesCollection = collection(firestore, "categories");
       const categoryMap: Record<string, string> = {};
@@ -152,16 +164,16 @@ function SeedDatabaseButton() {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Cargar el menú de muestra?</AlertDialogTitle>
+          <AlertDialogTitle>¿Reemplazar el menú actual?</AlertDialogTitle>
           <AlertDialogDescription>
-            Esta acción añadirá todas las categorías y productos del archivo de muestra a tu base de datos.
-            No eliminará los productos existentes. ¿Deseas continuar?
+            ¡Atención! Esta acción eliminará todos los productos y categorías existentes y los reemplazará con los del archivo de muestra.
+            ¿Deseas continuar?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={handleSeed}>
-            Sí, cargar menú
+            Sí, reemplazar menú
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

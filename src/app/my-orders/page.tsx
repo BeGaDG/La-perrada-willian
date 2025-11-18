@@ -1,55 +1,76 @@
-import { orders, products } from "@/lib/data";
+'use client';
+
+import { useMemo } from 'react';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import type { OrderStatus } from "@/lib/types";
+import type { Order, OrderStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Image from "next/image";
 
-// In a real app, this would be the ID of the authenticated user.
-const MOCK_USER_ID = "user-123";
-
 const statusColors: Record<OrderStatus, string> = {
   PENDIENTE_PAGO: "bg-yellow-500",
-  PAGADO: "bg-blue-500",
-  EN_COCINA: "bg-orange-500",
-  LISTO_PARA_RECOGER: "bg-purple-500",
+  EN_PREPARACION: "bg-orange-500",
+  LISTO_REPARTO: "bg-purple-500",
   COMPLETADO: "bg-green-500",
   CANCELADO: "bg-red-500",
 };
 
 const statusNames: Record<OrderStatus, string> = {
     PENDIENTE_PAGO: "Pendiente de Pago",
-    PAGADO: "Pagado",
-    EN_COCINA: "En Cocina",
-    LISTO_PARA_RECOGER: "Listo para Recoger",
+    EN_PREPARACION: "En Preparación",
+    LISTO_REPARTO: "Listo para Reparto",
     COMPLETADO: "Completado",
     CANCELADO: "Cancelado",
 }
 
+const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(price);
+}
+
 export default function MyOrdersPage() {
-  const myOrders = orders.filter((order) => order.userId === MOCK_USER_ID);
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const ordersRef = useMemoFirebase(() => firestore ? collection(firestore, 'orders') : null, [firestore]);
+  
+  // In a real app, this would use the real user ID. For now, it continues to use the mock ID.
+  const MOCK_USER_ID = 'user-123';
+  const ordersQuery = useMemoFirebase(() => {
+    if (!ordersRef) return null;
+    return query(ordersRef, where("customerId", "==", MOCK_USER_ID), orderBy("orderDate", "desc"));
+  }, [ordersRef]);
+
+  const { data: myOrders, isLoading } = useCollection<Order>(ordersQuery);
+
+  if (isLoading || isUserLoading) {
+    return (
+        <div className="container py-12 md:py-16 text-center">
+            <p>Cargando tus pedidos...</p>
+        </div>
+    )
+  }
 
   return (
     <div className="container py-12 md:py-16">
       <h1 className="text-3xl font-bold mb-8 font-headline">Mis Pedidos</h1>
-      {myOrders.length > 0 ? (
+      {myOrders && myOrders.length > 0 ? (
         <div className="space-y-8">
-          {myOrders.map((order) => {
-            const orderProducts = order.items.map(item => {
-              const product = products.find(p => p.id === item.productId);
-              return { ...item, product };
-            })
-
-            return (
+          {myOrders.map((order) => (
               <Card key={order.id} className="overflow-hidden">
                 <CardHeader className="flex flex-row justify-between items-start bg-muted/50 p-4">
                   <div>
-                    <CardTitle className="text-lg">Pedido #{order.id.split('-')[1]}</CardTitle>
+                    <CardTitle className="text-lg">Pedido #{order.id.substring(0, 5)}...</CardTitle>
                     <CardDescription>
-                      {format(order.createdAt, "PPP", { locale: es })}
+                      {order.orderDate ? format(order.orderDate.toDate(), "PPP", { locale: es }) : 'Fecha no disponible'}
                     </CardDescription>
                   </div>
                   <Badge variant="secondary" className="flex items-center gap-2">
@@ -59,28 +80,27 @@ export default function MyOrdersPage() {
                 </CardHeader>
                 <CardContent className="p-4">
                     <div className="space-y-4">
-                        {orderProducts.map(item => item.product ? (
-                            <div key={item.productId} className="flex justify-between items-center">
+                        {order.items.map((item, index) => (
+                            <div key={`${item.productId}-${index}`} className="flex justify-between items-center">
                                 <div className="flex items-center gap-4">
-                                    <Image src={item.product.imageUrl} alt={item.product.name} width={48} height={48} className="rounded-md aspect-square object-cover" data-ai-hint={item.product.imageHint} />
                                     <div>
-                                        <p className="font-semibold">{item.product.name}</p>
-                                        <p className="text-sm text-muted-foreground">{item.quantity} x ${item.price.toFixed(2)}</p>
+                                        <p className="font-semibold">{item.productName}</p>
+                                        <p className="text-sm text-muted-foreground">{item.quantity} x {formatPrice(item.unitPrice)}</p>
                                     </div>
                                 </div>
-                                <p className="font-semibold">${(item.quantity * item.price).toFixed(2)}</p>
+                                <p className="font-semibold">{formatPrice(item.quantity * item.unitPrice)}</p>
                             </div>
-                        ) : null)}
+                        ))}
                     </div>
                 </CardContent>
                 <CardFooter className="bg-muted/50 p-4">
                   <div className="flex justify-end w-full">
-                    <p className="font-bold text-lg">Total: ${order.total.toFixed(2)}</p>
+                    <p className="font-bold text-lg">Total: {formatPrice(order.totalAmount)}</p>
                   </div>
                 </CardFooter>
               </Card>
             )
-          })}
+          )}
         </div>
       ) : (
         <div className="text-center py-16 border-2 border-dashed rounded-lg">

@@ -81,7 +81,7 @@ function OrderCard({ order }: { order: Order }) {
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
          {nextStatus[order.status] && (
-            <Button onClick={handleAdvanceState} className="w-full">
+            <Button onClick={handleAdvanceState} className="w-full whitespace-normal h-auto">
                 {getActionLabel(order.status)}
             </Button>
          )}

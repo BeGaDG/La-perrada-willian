@@ -1,6 +1,6 @@
 import type { Timestamp } from 'firebase/firestore';
 
-export type ProductCategory = 'Perros Calientes' | 'Hamburguesas' | 'Bebidas' | 'Otros';
+export type ProductCategory = string;
 
 export type Product = {
   id: string;

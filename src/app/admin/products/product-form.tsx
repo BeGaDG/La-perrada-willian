@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
@@ -17,7 +16,7 @@ const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   description: z.string().min(10, "La descripción debe tener al menos 10 caracteres."),
   price: z.coerce.number().min(0, "El precio no puede ser negativo."),
-  category: z.enum(['Perros Calientes', 'Hamburguesas', 'Bebidas', 'Otros'], { required_error: "La categoría es obligatoria."}),
+  category: z.string().min(1, "La categoría es obligatoria."),
 });
 
 
@@ -111,17 +110,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="category" className="text-right">Categoría</Label>
-                            <Select name="category" defaultValue={productToEdit?.category}>
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Selecciona una categoría" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Perros Calientes">Perros Calientes</SelectItem>
-                                    <SelectItem value="Hamburguesas">Hamburguesas</SelectItem>
-                                    <SelectItem value="Bebidas">Bebidas</SelectItem>
-                                    <SelectItem value="Otros">Otros</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <Input id="category" name="category" defaultValue={productToEdit?.category} className="col-span-3" />
                             {errors?.category && <p className="col-span-4 text-xs text-destructive text-right">{errors.category[0]}</p>}
                         </div>
                     </div>

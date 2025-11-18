@@ -33,9 +33,9 @@ service cloud.firestore {
      * @principle Enforces user-ownership for orders based on customerId and authenticated user ID.
      */
     match /orders/{orderId} {
-      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
-      allow get, list: if isSignedIn() && isOwner(resource.data.customerId);
-      allow update, delete: if isSignedIn() && isExistingOwner(resource.data.customerId);
+      allow create: if isSignedIn();
+      allow get, list, update: if isSignedIn();
+      allow delete: if false;
     }
 
     /**

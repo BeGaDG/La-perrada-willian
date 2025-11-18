@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useUser, useAuth } from "@/firebase"
 import { useEffect } from "react"
+import { Separator } from "@/components/ui/separator"
 
 const adminNavLinks = [
     { href: "/admin/orders", label: "Pedidos", icon: ScrollText },
@@ -32,6 +33,7 @@ export default function AdminLayout({
     }, [user, isUserLoading, router]);
 
     const handleSignOut = async () => {
+      if (!auth) return;
       await auth.signOut();
       router.push('/login');
     }
@@ -46,7 +48,7 @@ export default function AdminLayout({
 
   return (
     <div className="container grid flex-1 gap-12 md:grid-cols-[200px_1fr] py-8 md:py-12">
-        <aside className="hidden w-[200px] flex-col md:flex justify-between">
+        <aside className="hidden w-[200px] flex-col md:flex">
           <nav className="grid items-start gap-2">
             {adminNavLinks.map(link => (
                 <Link key={link.href} href={link.href}>
@@ -59,15 +61,14 @@ export default function AdminLayout({
                     </Button>
                 </Link>
             ))}
+             <Separator className="my-2" />
+             <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar Sesión
+            </Button>
           </nav>
-          <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Cerrar Sesión
-          </Button>
         </aside>
         <main>{children}</main>
     </div>
   )
 }
-
-    

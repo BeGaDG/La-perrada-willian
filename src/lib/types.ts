@@ -19,7 +19,7 @@ export type OrderItem = {
   unitPrice: number;
 };
 
-export type OrderStatus = 'PENDIENTE_PAGO' | 'PAGADO' | 'EN_COCINA' | 'LISTO_PARA_RECOGER' | 'COMPLETADO' | 'CANCELADO';
+export type OrderStatus = 'PENDIENTE_PAGO' | 'EN_PREPARACION' | 'LISTO_REPARTO' | 'COMPLETADO' | 'CANCELADO';
 
 export type Order = {
   id: string;

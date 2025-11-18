@@ -30,6 +30,15 @@ export default function AdminLayout({
         }
     }, [user, isUserLoading, router]);
 
+    const handleSignOut = async () => {
+      if (user) {
+        await auth.signOut();
+        // Potentially delete the anonymous user if you don't want them to persist
+        // await user.delete();
+      }
+      router.push('/login');
+    }
+
     if (isUserLoading || !user) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -54,7 +63,7 @@ export default function AdminLayout({
                 </Link>
             ))}
           </nav>
-          <Button variant="ghost" className="w-full justify-start" onClick={() => auth.signOut()}>
+          <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
             Cerrar Sesión
           </Button>

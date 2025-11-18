@@ -39,14 +39,6 @@ export function ProductForm({ children, productToEdit }: { children: React.React
         const formData = new FormData(event.currentTarget);
         const rawData = Object.fromEntries(formData.entries());
 
-        // Ensure price is treated as a number
-        rawData.price = Number(rawData.price);
-        
-        // Let's allow empty string for imageUrl, if so, we can provide a default
-        if (rawData.imageUrl === '') {
-            // we can let it be empty and the UI will handle it
-        }
-
         const validatedFields = productSchema.safeParse(rawData);
         if (!validatedFields.success) {
             setErrors(validatedFields.error.flatten().fieldErrors);

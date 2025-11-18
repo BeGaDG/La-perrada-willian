@@ -12,6 +12,11 @@ export type Product = {
   imageHint: string;
 };
 
+export type Category = {
+  id: string;
+  name: string;
+};
+
 export type OrderItem = {
   productId: string;
   productName: string;
@@ -36,3 +41,5 @@ export type Order = {
   readyAt?: Timestamp;
   completedAt?: Timestamp;
 };
+
+    

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Package, ScrollText, Home, LogOut } from "lucide-react"
+import { Package, ScrollText, Home, LogOut, Tags } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { useEffect } from "react"
 const adminNavLinks = [
     { href: "/admin/orders", label: "Pedidos", icon: ScrollText },
     { href: "/admin/products", label: "Productos", icon: Package },
+    { href: "/admin/categories", label: "Categorías", icon: Tags },
 ];
 
 export default function AdminLayout({
@@ -68,3 +69,5 @@ export default function AdminLayout({
     </div>
   )
 }
+
+    

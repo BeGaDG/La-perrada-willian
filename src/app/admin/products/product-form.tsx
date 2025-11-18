@@ -6,11 +6,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '@/components/ui/textarea';
-import type { Product } from '@/lib/types';
+import type { Product, Category } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -26,6 +27,9 @@ export function ProductForm({ children, productToEdit }: { children: React.React
     const firestore = useFirestore();
     const [isPending, startTransition] = useTransition();
     const [errors, setErrors] = useState<Record<string, string[] | undefined> | null>(null);
+
+    const categoriesRef = useMemoFirebase(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
+    const { data: categories, isLoading: isLoadingCategories } = useCollection<Category>(categoriesRef);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -110,7 +114,18 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="category" className="text-right">Categoría</Label>
-                            <Input id="category" name="category" defaultValue={productToEdit?.category} className="col-span-3" />
+                             <Select name="category" defaultValue={productToEdit?.category}>
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder={isLoadingCategories ? "Cargando..." : "Selecciona una categoría"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories?.map(category => (
+                                        <SelectItem key={category.id} value={category.name}>
+                                            {category.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             {errors?.category && <p className="col-span-4 text-xs text-destructive text-right">{errors.category[0]}</p>}
                         </div>
                     </div>
@@ -122,3 +137,5 @@ export function ProductForm({ children, productToEdit }: { children: React.React
         </Dialog>
     );
 }
+
+    

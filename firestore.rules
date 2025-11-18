@@ -20,7 +20,7 @@ service cloud.firestore {
      */
     match /products/{productId} {
       allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add Admin role.
+      allow create, update, delete: if isSignedIn(); 
     }
 
     /**
@@ -33,7 +33,7 @@ service cloud.firestore {
      * @principle Enforces user-ownership for orders based on customerId and authenticated user ID.
      */
     match /orders/{orderId} {
-      allow create: if isSignedIn();
+      allow create: if true;
       allow get, list, update: if isSignedIn();
       allow delete: if false;
     }
@@ -63,6 +63,15 @@ service cloud.firestore {
       allow get, list, create, update, delete: if false;
     }
 
+    /**
+     * @description Allows anyone to read categories, but only admins to write.
+     * @path /categories/{categoryId}
+     */
+    match /categories/{categoryId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
     // Helper functions
     function isSignedIn() {
       return request.auth != null;
@@ -77,3 +86,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

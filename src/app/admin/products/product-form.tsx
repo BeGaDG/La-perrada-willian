@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useCallback } from 'react';
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,8 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { uploadImage } from '@/lib/cloudinary';
+import { UploadCloud, X, Loader2 } from 'lucide-react';
 
 const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -22,15 +25,114 @@ const productSchema = z.object({
 });
 
 
+function ImageUploader({ value, onValueChange }: { value: string; onValueChange: (value: string) => void }) {
+    const [isUploading, setIsUploading] = useState(false);
+    const { toast } = useToast();
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const result = await uploadImage(formData);
+            onValueChange(result.imageUrl);
+            toast({ title: "Imagen subida", description: "La imagen se ha subido con éxito a Cloudinary." });
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo subir la imagen." });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const onDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isUploading) return;
+        
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            handleFileChange({ target: { files: [file] } } as any);
+        }
+    }, [isUploading]);
+
+    const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    return (
+        <div className="grid grid-cols-4 items-start gap-4">
+            <Label className="text-right pt-2">Imagen</Label>
+            <div className="col-span-3">
+                {value ? (
+                    <div className="relative">
+                        <Image src={value} alt="Preview" width={100} height={100} className="rounded-md border aspect-video object-cover" />
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                            onClick={() => onValueChange('')}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ) : (
+                    <div 
+                        className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted"
+                        onDrop={onDrop}
+                        onDragOver={onDragOver}
+                    >
+                        {isUploading ? (
+                            <>
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <p className="text-sm text-muted-foreground mt-2">Subiendo...</p>
+                            </>
+                        ) : (
+                            <>
+                                <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground mt-2">Arrastra o haz clic para subir</p>
+                                <Input 
+                                    id="file-upload" 
+                                    type="file" 
+                                    className="absolute w-full h-full opacity-0 cursor-pointer"
+                                    onChange={handleFileChange} 
+                                    accept="image/*"
+                                    disabled={isUploading}
+                                />
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export function ProductForm({ children, productToEdit }: { children: React.ReactNode, productToEdit?: Product }) {
     const [open, setOpen] = useState(false);
     const { toast } = useToast();
     const firestore = useFirestore();
     const [isPending, startTransition] = useTransition();
     const [errors, setErrors] = useState<Record<string, string[] | undefined> | null>(null);
+    const [imageUrl, setImageUrl] = useState(productToEdit?.imageUrl || '');
 
     const categoriesRef = useMemoFirebase(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
     const { data: categories, isLoading: isLoadingCategories } = useCollection<Category>(categoriesRef);
+
+    React.useEffect(() => {
+        if (productToEdit?.imageUrl) {
+            setImageUrl(productToEdit.imageUrl);
+        }
+        if (!open) {
+            setImageUrl('');
+        }
+    }, [productToEdit, open]);
     
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -38,6 +140,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
 
         const formData = new FormData(event.currentTarget);
         const rawData = Object.fromEntries(formData.entries());
+        rawData.imageUrl = imageUrl;
 
         const validatedFields = productSchema.safeParse(rawData);
         if (!validatedFields.success) {
@@ -74,6 +177,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                     description: 'Producto guardado con éxito.',
                 });
                 setOpen(false);
+                setImageUrl('');
             } catch (e) {
                 console.error("Error saving product:", e);
                 toast({
@@ -97,7 +201,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                 <DialogHeader>
                     <DialogTitle>{productToEdit ? 'Editar Producto' : 'Añadir Producto'}</DialogTitle>
                     <DialogDescription>
-                        {productToEdit ? 'Actualiza los detalles del producto.' : 'Añade un nuevo producto al menú. Pega la URL de una imagen de Cloudinary.'}
+                        {productToEdit ? 'Actualiza los detalles del producto.' : 'Añade un nuevo producto al menú. Sube una imagen desde tu dispositivo.'}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
@@ -134,11 +238,8 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                             </Select>
                             {errors?.category && <p className="col-span-4 text-xs text-destructive text-right">{errors.category[0]}</p>}
                         </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="imageUrl" className="text-right">URL de Imagen</Label>
-                            <Input id="imageUrl" name="imageUrl" type="text" placeholder="https://res.cloudinary.com/..." defaultValue={productToEdit?.imageUrl} className="col-span-3" />
-                             {errors?.imageUrl && <p className="col-span-4 text-xs text-destructive text-right">{errors.imageUrl[0]}</p>}
-                        </div>
+                        <ImageUploader value={imageUrl} onValueChange={setImageUrl} />
+                         {errors?.imageUrl && <p className="col-span-4 text-xs text-destructive text-right -mt-2">{errors.imageUrl[0]}</p>}
                     </div>
                     <DialogFooter>
                          <Button type="submit" disabled={isPending}>{isPending ? "Guardando..." : "Guardar Cambios"}</Button>

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, MoreVertical } from 'lucide-react';
+import { ChevronDown, MoreVertical, Printer } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const kanbanColumns: { title: string; status: OrderStatus }[] = [
@@ -118,11 +118,6 @@ function OrderCard({ order, onMoveState }: { order: Order, onMoveState: (orderId
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
-                <PrintTicketDialog order={order}>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        Imprimir Ticket
-                    </DropdownMenuItem>
-                </PrintTicketDialog>
                 {prev && (
                     <DropdownMenuItem onClick={() => onMoveState(order.id, prev)}>
                         Mover a "{getStatusName(prev)}"
@@ -154,11 +149,19 @@ function OrderCard({ order, onMoveState }: { order: Order, onMoveState: (orderId
         </CardContent>
       </CollapsibleContent>
       <CardFooter className="flex flex-col gap-2 p-4 pt-0">
-         {next && (
-            <Button onClick={() => onMoveState(order.id, next)} className="w-full whitespace-normal h-auto">
-                {getActionLabel(order.status)}
-            </Button>
-         )}
+        <div className='flex w-full gap-2'>
+            <PrintTicketDialog order={order}>
+                <Button variant="outline" size="icon" className="flex-shrink-0">
+                    <Printer className="h-4 w-4" />
+                    <span className="sr-only">Imprimir Ticket</span>
+                </Button>
+            </PrintTicketDialog>
+            {next && (
+                <Button onClick={() => onMoveState(order.id, next)} className="w-full whitespace-normal h-auto">
+                    {getActionLabel(order.status)}
+                </Button>
+            )}
+        </div>
       </CardFooter>
     </Card>
      </Collapsible>
@@ -186,8 +189,12 @@ export default function AdminOrdersPage() {
       prevOrders.map(o => o.id === orderId ? { ...o, status: newStatus } : o)
     );
 
-    // Call server action in the background - DISABLED FOR DEMO
-    // updateOrderStatus(orderId, newStatus);
+    // try {
+    //   updateOrderStatus(orderId, newStatus);
+    // } catch (e) {
+    //   // Revert on error
+    //   setLocalOrders(remoteOrders || []);
+    // }
   };
 
   const ordersByStatus = useMemo(() => {

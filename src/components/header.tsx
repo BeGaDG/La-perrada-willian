@@ -9,9 +9,9 @@ import { CartSheet } from './cart-sheet';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const navLinks = [
-  { href: '/my-orders', label: 'Mis Pedidos', icon: ScrollText },
-  { href: '/admin/orders', label: 'Admin', icon: Shield },
+const allNavLinks = [
+  { href: '/my-orders', label: 'Mis Pedidos', icon: ScrollText, admin: false },
+  { href: '/admin/orders', label: 'Admin', icon: Shield, admin: true },
 ];
 
 export function Header() {
@@ -21,6 +21,21 @@ export function Header() {
   const pathname = usePathname();
 
   const isAdminPage = pathname.startsWith('/admin');
+
+  const navLinks = allNavLinks.filter(link => {
+    if (isAdminPage) {
+      return link.admin; // Mostrar solo links de admin
+    }
+    // En el modo no-admin, podríamos querer mostrar algunos links de admin o no,
+    // por ahora, mostramos todos los que no son exclusivamente de admin.
+    // O mejor, mostramos los que no son de admin, y el que lleva al admin.
+    return true; // Simplificamos: en paginas publicas se muestran todos. El admin layout tiene su propio nav.
+  }).filter(link => {
+      // Si estamos en modo admin, no mostramos "Mis pedidos"
+      if (isAdminPage && link.href === '/my-orders') return false;
+      return true;
+  });
+
 
   return (
     <>

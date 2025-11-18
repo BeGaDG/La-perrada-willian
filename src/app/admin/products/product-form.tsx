@@ -10,6 +10,7 @@ import type { Product, Category } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { z } from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -18,8 +19,11 @@ const productSchema = z.object({
   description: z.string().min(10, "La descripción debe tener al menos 10 caracteres."),
   price: z.coerce.number().min(0, "El precio no puede ser negativo."),
   category: z.string().min(1, "La categoría es obligatoria."),
-  imageUrl: z.string().url("Debe ser una URL válida.").optional().or(z.literal('')),
 });
+
+const imageSchema = z.instanceof(File).optional()
+  .refine(file => !file || file.size <= 5 * 1024 * 1024, `El tamaño máximo de la imagen es 5MB.`)
+  .refine(file => !file || ['image/jpeg', 'image/png', 'image/webp'].includes(file.type), 'Formato de imagen no válido. Solo se aceptan JPG, PNG, o WebP.');
 
 
 export function ProductForm({ children, productToEdit }: { children: React.ReactNode, productToEdit?: Product }) {
@@ -28,13 +32,35 @@ export function ProductForm({ children, productToEdit }: { children: React.React
     const firestore = useFirestore();
     const [isPending, startTransition] = useTransition();
     const [errors, setErrors] = useState<Record<string, string[] | undefined> | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imageError, setImageError] = useState<string | null>(null);
+
 
     const categoriesRef = useMemoFirebase(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
     const { data: categories, isLoading: isLoadingCategories } = useCollection<Category>(categoriesRef);
 
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0] ?? null;
+        setImageError(null);
+        
+        if (file) {
+            const validation = imageSchema.safeParse(file);
+            if (!validation.success) {
+                setImageError(validation.error.flatten().formErrors[0]);
+                setImageFile(null);
+            } else {
+                setImageFile(file);
+            }
+        } else {
+            setImageFile(null);
+        }
+    };
+    
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setErrors(null);
+        setImageError(null);
+
         const formData = new FormData(event.currentTarget);
         const rawData = Object.fromEntries(formData.entries());
 
@@ -49,26 +75,33 @@ export function ProductForm({ children, productToEdit }: { children: React.React
             return;
         }
         
-        const { ...data } = validatedFields.data;
-        const id = formData.get('id') as string | null;
-
-        const finalImageUrl = data.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`;
-
         startTransition(async () => {
             if (!firestore) return;
+            const storage = getStorage();
 
             try {
+                let imageUrl = productToEdit?.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`;
+
+                if (imageFile) {
+                    const storageRef = ref(storage, `product-images/${Date.now()}_${imageFile.name}`);
+                    const uploadResult = await uploadBytes(storageRef, imageFile);
+                    imageUrl = await getDownloadURL(uploadResult.ref);
+                }
+                
+                const { ...data } = validatedFields.data;
+                const id = formData.get('id') as string | null;
+
                 if (id) {
                     const productRef = doc(firestore, 'products', id);
                     await updateDoc(productRef, {
                         ...data,
-                        imageUrl: finalImageUrl,
+                        imageUrl,
                     });
                 } else {
                     const productsCollection = collection(firestore, 'products');
                     const newProduct = {
                         ...data,
-                        imageUrl: finalImageUrl,
+                        imageUrl,
                         imageHint: data.category.toLowerCase()
                     };
                     await addDoc(productsCollection, newProduct);
@@ -79,6 +112,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                     description: 'Producto guardado con éxito.',
                 });
                 setOpen(false);
+                setImageFile(null);
             } catch (e) {
                 console.error("Error saving product:", e);
                 toast({
@@ -91,7 +125,14 @@ export function ProductForm({ children, productToEdit }: { children: React.React
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (!isOpen) {
+                setErrors(null);
+                setImageError(null);
+                setImageFile(null);
+            }
+        }}>
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
@@ -135,9 +176,9 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                             {errors?.category && <p className="col-span-4 text-xs text-destructive text-right">{errors.category[0]}</p>}
                         </div>
                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="imageUrl" className="text-right">URL de Imagen</Label>
-                            <Input id="imageUrl" name="imageUrl" defaultValue={productToEdit?.imageUrl.startsWith('https://placehold.co') ? '' : productToEdit?.imageUrl} className="col-span-3" placeholder="Opcional" />
-                            {errors?.imageUrl && <p className="col-span-4 text-xs text-destructive text-right">{errors.imageUrl[0]}</p>}
+                            <Label htmlFor="image" className="text-right">Imagen</Label>
+                            <Input id="image" name="image" type="file" accept="image/png, image/jpeg, image/webp" onChange={handleImageChange} className="col-span-3" />
+                             {imageError && <p className="col-span-4 text-xs text-destructive text-right">{imageError}</p>}
                         </div>
                     </div>
                     <DialogFooter>
@@ -148,3 +189,5 @@ export function ProductForm({ children, productToEdit }: { children: React.React
         </Dialog>
     );
 }
+
+    

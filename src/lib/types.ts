@@ -31,5 +31,8 @@ export type Order = {
   totalAmount: number;
   status: OrderStatus;
   paymentMethod: string;
-  orderDate: Timestamp | Date; // Allow both for client-side and server-side representations
+  orderDate: Timestamp;
+  confirmedAt?: Timestamp;
+  readyAt?: Timestamp;
+  completedAt?: Timestamp;
 };

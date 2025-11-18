@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from "next/cache";
-import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, updateDoc, Timestamp } from "firebase/firestore";
 import { getSdks } from "@/firebase";
 import type { OrderStatus } from "./types";
 
@@ -49,8 +49,20 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   const { firestore } = getSdks();
   const orderRef = doc(firestore, "orders", orderId);
 
+  const statusUpdate: { status: OrderStatus; [key: string]: any } = { status };
+
+  // Add a timestamp for the new status
+  const now = serverTimestamp();
+  if (status === 'EN_PREPARACION') {
+    statusUpdate.confirmedAt = now;
+  } else if (status === 'LISTO_REPARTO') {
+    statusUpdate.readyAt = now;
+  } else if (status === 'COMPLETADO') {
+    statusUpdate.completedAt = now;
+  }
+
   try {
-    await updateDoc(orderRef, { status: status });
+    await updateDoc(orderRef, statusUpdate);
     console.log(`Order ${orderId} updated to ${status}`);
     
     revalidatePath('/admin/orders');

@@ -12,7 +12,6 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { generateProductImage } from '@/ai/flows/generate-product-image-flow';
 
 const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -42,6 +41,11 @@ export function ProductForm({ children, productToEdit }: { children: React.React
 
         // Ensure price is treated as a number
         rawData.price = Number(rawData.price);
+        
+        // Let's allow empty string for imageUrl, if so, we can provide a default
+        if (rawData.imageUrl === '') {
+            // we can let it be empty and the UI will handle it
+        }
 
         const validatedFields = productSchema.safeParse(rawData);
         if (!validatedFields.success) {
@@ -61,31 +65,13 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                 const { ...data } = validatedFields.data;
                 const id = formData.get('id') as string | null;
 
-                let finalImageUrl = data.imageUrl;
-                if (!finalImageUrl && data.name) {
-                    toast({ description: 'Generando imagen con IA... Esto puede tardar unos segundos.'});
-                    try {
-                        const result = await generateProductImage({ productName: data.name });
-                        finalImageUrl = result.imageUrl;
-                        toast({ title: '¡Éxito!', description: 'Imagen generada con IA.'});
-                    } catch (aiError) {
-                        console.error("AI image generation failed:", aiError);
-                        toast({ variant: 'destructive', title: 'Error de IA', description: 'No se pudo generar la imagen. Se guardará sin imagen.'});
-                    }
-                }
-
-
                 if (id) {
                     const productRef = doc(firestore, 'products', id);
-                    await updateDoc(productRef, {
-                        ...data,
-                        imageUrl: finalImageUrl || ""
-                    });
+                    await updateDoc(productRef, data);
                 } else {
                     const productsCollection = collection(firestore, 'products');
                     const newProduct = {
                         ...data,
-                        imageUrl: finalImageUrl || "",
                         imageHint: data.name.toLowerCase().split(' ').slice(0,2).join(' ') || data.category.toLowerCase()
                     };
                     await addDoc(productsCollection, newProduct);
@@ -119,7 +105,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                 <DialogHeader>
                     <DialogTitle>{productToEdit ? 'Editar Producto' : 'Añadir Producto'}</DialogTitle>
                     <DialogDescription>
-                        {productToEdit ? 'Actualiza los detalles del producto.' : 'Añade un nuevo producto al menú. Si dejas la URL de la imagen vacía, se generará una con IA.'}
+                        {productToEdit ? 'Actualiza los detalles del producto.' : 'Añade un nuevo producto al menú. Pega la URL de una imagen de Cloudinary.'}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
@@ -158,7 +144,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                         </div>
                          <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="imageUrl" className="text-right">URL de Imagen</Label>
-                            <Input id="imageUrl" name="imageUrl" type="text" placeholder="Dejar vacío para usar IA" defaultValue={productToEdit?.imageUrl} className="col-span-3" />
+                            <Input id="imageUrl" name="imageUrl" type="text" placeholder="https://res.cloudinary.com/..." defaultValue={productToEdit?.imageUrl} className="col-span-3" />
                              {errors?.imageUrl && <p className="col-span-4 text-xs text-destructive text-right">{errors.imageUrl[0]}</p>}
                         </div>
                     </div>

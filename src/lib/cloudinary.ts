@@ -1,44 +1,47 @@
 'use server';
 
+import { v2 as cloudinary } from 'cloudinary';
+import { Readable } from 'stream';
+
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+  api_key: process.env.CLOUDINARY_API_KEY, 
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true
+});
+
+async function buffer(file: File) {
+    const bytes = await file.arrayBuffer()
+    return Buffer.from(bytes)
+}
+
 export async function uploadImage(formData: FormData): Promise<{ imageUrl: string }> {
-  const file = formData.get('image') as File;
-  if (!file) {
-    throw new Error('No file provided');
-  }
-
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    console.error('Cloudinary configuration is missing from environment variables.');
-    throw new Error('Server is not configured for image uploads.');
-  }
-
-  const uploadFormData = new FormData();
-  uploadFormData.append('file', file);
-  uploadFormData.append('upload_preset', uploadPreset);
-
-  const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      body: uploadFormData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Cloudinary upload failed:', errorData);
-      throw new Error(`Failed to upload image. Status: ${response.status}`);
+    const file = formData.get('image') as File;
+    if (!file) {
+        throw new Error('No file provided');
     }
 
-    const data = await response.json();
-    
-    return {
-      imageUrl: data.secure_url,
-    };
-  } catch (error) {
-    console.error('Error uploading to Cloudinary:', error);
-    throw new Error('Failed to upload image.');
-  }
+    const fileBuffer = await buffer(file);
+
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+            { resource_type: 'image' },
+            (error, result) => {
+                if (error) {
+                    console.error('Cloudinary upload error:', error);
+                    return reject(new Error('Failed to upload image.'));
+                }
+                if (!result) {
+                    return reject(new Error('Cloudinary did not return a result.'));
+                }
+                resolve({ imageUrl: result.secure_url });
+            }
+        );
+
+        const readableStream = new Readable();
+        readableStream._read = () => {}; // _read is required but can be a no-op
+        readableStream.push(fileBuffer);
+        readableStream.push(null);
+        readableStream.pipe(uploadStream);
+    });
 }

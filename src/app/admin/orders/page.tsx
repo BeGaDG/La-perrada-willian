@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, MoreVertical } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const kanbanColumns: { title: string; status: OrderStatus }[] = [
   { title: 'Nuevos Pedidos', status: 'PENDIENTE_PAGO' },
@@ -21,20 +22,25 @@ const kanbanColumns: { title: string; status: OrderStatus }[] = [
   { title: 'Completado', status: 'COMPLETADO' },
 ];
 
-const nextStatus: Record<OrderStatus, OrderStatus | null> = {
-    PENDIENTE_PAGO: 'EN_PREPARACION',
-    EN_PREPARACION: 'LISTO_REPARTO',
-    LISTO_REPARTO: 'COMPLETADO',
-    COMPLETADO: null,
-    CANCELADO: null,
-}
+const statusFlow: Record<OrderStatus, { next: OrderStatus | null; prev: OrderStatus | null }> = {
+    PENDIENTE_PAGO: { next: 'EN_PREPARACION', prev: null },
+    EN_PREPARACION: { next: 'LISTO_REPARTO', prev: 'PENDIENTE_PAGO' },
+    LISTO_REPARTO: { next: 'COMPLETADO', prev: 'EN_PREPARACION' },
+    COMPLETADO: { next: null, prev: 'LISTO_REPARTO' },
+    CANCELADO: { next: null, prev: null },
+};
 
 const getActionLabel = (status: OrderStatus): string => {
     if (status === 'PENDIENTE_PAGO') return 'Confirmar Pago y Enviar a Cocina';
-    const next = nextStatus[status];
+    const next = statusFlow[status]?.next;
     if (next === 'LISTO_REPARTO') return 'Marcar como Listo para Reparto';
     if (next === 'COMPLETADO') return 'Marcar como Completado';
     return 'Avanzar';
+}
+
+const getStatusName = (status: OrderStatus): string => {
+    const column = kanbanColumns.find(c => c.status === status);
+    return column ? column.title : status;
 }
 
 const formatPrice = (price: number) => {
@@ -46,7 +52,7 @@ const formatPrice = (price: number) => {
     }).format(price);
 }
 
-function PrintTicketDialog({ order }: { order: Order }) {
+function PrintTicketDialog({ order, children }: { order: Order; children: React.ReactNode }) {
   const formattedDate = order.orderDate
     ? format(order.orderDate.toDate(), "Pp", { locale: es })
     : 'N/A';
@@ -54,7 +60,7 @@ function PrintTicketDialog({ order }: { order: Order }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">Imprimir Ticket</Button>
+        {children}
       </DialogTrigger>
       <DialogContent className="max-w-xs sm:max-w-sm">
         <DialogHeader>
@@ -84,25 +90,47 @@ function PrintTicketDialog({ order }: { order: Order }) {
 }
 
 
-function OrderCard({ order, onAdvance }: { order: Order, onAdvance: (orderId: string) => void }) {
+function OrderCard({ order, onMoveState }: { order: Order, onMoveState: (orderId: string, newStatus: OrderStatus) => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { next, prev } = statusFlow[order.status];
   
   return (
     <Collapsible asChild>
     <Card>
       <CardHeader className="p-4">
-        <CollapsibleTrigger className='w-full'>
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-sm font-medium text-left">
-                Pedido #{order.id.substring(0,5)}...
-                <p className="font-normal">{order.customerName}</p>
-            </CardTitle>
-            <div className='flex items-center gap-2'>
-                <Badge variant={order.paymentMethod === 'EFECTIVO' ? 'secondary' : 'outline' }>{order.paymentMethod}</Badge>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <div className='flex justify-between items-start gap-2'>
+          <CollapsibleTrigger className='w-full' onClick={() => setIsOpen(v => !v)}>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-sm font-medium text-left">
+                  Pedido #{order.id.substring(0,5)}...
+                  <p className="font-normal">{order.customerName}</p>
+              </CardTitle>
+              <div className='flex items-center gap-2'>
+                  <Badge variant={order.paymentMethod === 'EFECTIVO' ? 'secondary' : 'outline' }>{order.paymentMethod}</Badge>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+              </div>
             </div>
-          </div>
-        </CollapsibleTrigger>
+          </CollapsibleTrigger>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className='h-8 w-8 flex-shrink-0'>
+                    <MoreVertical className='h-4 w-4' />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+                <PrintTicketDialog order={order}>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        Imprimir Ticket
+                    </DropdownMenuItem>
+                </PrintTicketDialog>
+                {prev && (
+                    <DropdownMenuItem onClick={() => onMoveState(order.id, prev)}>
+                        Mover a "{getStatusName(prev)}"
+                    </DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </CardHeader>
       <CollapsibleContent>
         <CardContent className="text-sm px-4 pb-4 space-y-2">
@@ -126,12 +154,11 @@ function OrderCard({ order, onAdvance }: { order: Order, onAdvance: (orderId: st
         </CardContent>
       </CollapsibleContent>
       <CardFooter className="flex flex-col gap-2 p-4 pt-0">
-         {nextStatus[order.status] && (
-            <Button onClick={() => onAdvance(order.id)} className="w-full whitespace-normal h-auto">
+         {next && (
+            <Button onClick={() => onMoveState(order.id, next)} className="w-full whitespace-normal h-auto">
                 {getActionLabel(order.status)}
             </Button>
          )}
-         <PrintTicketDialog order={order} />
       </CardFooter>
     </Card>
      </Collapsible>
@@ -153,24 +180,18 @@ export default function AdminOrdersPage() {
     }
   }, [remoteOrders]);
 
-  const handleAdvanceState = (orderId: string) => {
-    const orderToUpdate = localOrders.find(o => o.id === orderId);
-    if (!orderToUpdate) return;
-    
-    const next = nextStatus[orderToUpdate.status];
-    if (!next) return;
-
+  const handleMoveState = (orderId: string, newStatus: OrderStatus) => {
     // Optimistic UI update
     setLocalOrders(prevOrders => 
-      prevOrders.map(o => o.id === orderId ? { ...o, status: next } : o)
+      prevOrders.map(o => o.id === orderId ? { ...o, status: newStatus } : o)
     );
 
     // Call server action in the background - DISABLED FOR DEMO
-    // updateOrderStatus(orderId, next);
+    // updateOrderStatus(orderId, newStatus);
   };
 
   const ordersByStatus = useMemo(() => {
-    const grouped: Record<OrderStatus, Order[]> = {
+    const grouped: Record<string, Order[]> = {
       PENDIENTE_PAGO: [],
       EN_PREPARACION: [],
       LISTO_REPARTO: [],
@@ -197,9 +218,9 @@ export default function AdminOrdersPage() {
           <div key={col.status} className="bg-muted/50 rounded-lg p-4">
             <h2 className="font-semibold mb-4 text-center">{col.title} ({ordersByStatus[col.status]?.length || 0})</h2>
             <div className="space-y-4">
-                {ordersByStatus[col.status].length > 0 ? (
+                {ordersByStatus[col.status]?.length > 0 ? (
                     ordersByStatus[col.status].map(order => (
-                        <OrderCard key={order.id} order={order} onAdvance={handleAdvanceState} />
+                        <OrderCard key={order.id} order={order} onMoveState={handleMoveState} />
                     ))
                 ) : (
                     <p className='text-sm text-center text-muted-foreground pt-4'>No hay pedidos en este estado.</p>

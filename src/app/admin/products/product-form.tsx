@@ -14,6 +14,8 @@ import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UploadCloud, X, Loader2 } from 'lucide-react';
+import { uploadFile } from '@/lib/cloudinary/actions';
+
 
 const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -35,37 +37,27 @@ function ImageUploader({ value, onValueChange }: { value: string; onValueChange:
         setIsUploading(true);
 
         try {
-            // 1. Get signature from our API
-            const sigResponse = await fetch('/api/sign-image');
-            const { signature, timestamp } = await sigResponse.json();
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64data = reader.result as string;
+                const result = await uploadFile(base64data, 'products');
 
-            // 2. Upload directly to Cloudinary
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('signature', signature);
-            formData.append('timestamp', timestamp);
-            formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
-            
-            const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!}/image/upload`;
-
-            const response = await fetch(cloudinaryUrl, {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                 const errorData = await response.json();
-                 console.error('Cloudinary upload error details:', errorData);
-                 throw new Error('Cloudinary upload failed.');
+                if (result.success && result.url) {
+                    onValueChange(result.url);
+                    toast({ title: "Imagen subida", description: "La imagen se ha subido con éxito." });
+                } else {
+                    throw new Error(result.error || 'Upload failed');
+                }
+                 setIsUploading(false);
+            };
+            reader.onerror = () => {
+                setIsUploading(false);
+                throw new Error("Failed to read file");
             }
-
-            const result = await response.json();
-            onValueChange(result.secure_url);
-            toast({ title: "Imagen subida", description: "La imagen se ha subido con éxito a Cloudinary." });
-        } catch (error) {
+            reader.readAsDataURL(file);
+        } catch (error: any) {
             console.error("Upload error:", error);
-            toast({ variant: "destructive", title: "Error de Subida", description: "No se pudo subir la imagen. Revisa la consola para más detalles." });
-        } finally {
+            toast({ variant: "destructive", title: "Error de Subida", description: error.message || "No se pudo subir la imagen." });
             setIsUploading(false);
         }
     };

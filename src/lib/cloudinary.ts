@@ -1,6 +1,10 @@
 'use server';
 
 import { v2 as cloudinary } from 'cloudinary';
+import dotenv from 'dotenv';
+
+// Cargar explícitamente las variables de entorno desde el archivo .env
+dotenv.config();
 
 cloudinary.config({ 
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Card, CardContent } from './ui/card';
+import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Plus, ImageIcon } from 'lucide-react';
 import type { Product } from '@/lib/types';
@@ -31,9 +31,9 @@ export function ProductCard({ product }: ProductCardProps) {
   }).format(product.price);
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-lg">
-      <div className="flex items-center gap-3 md:block">
-        <div className="aspect-square w-24 flex-shrink-0 md:w-full md:aspect-[3/2] relative bg-muted flex items-center justify-center md:rounded-b-none rounded-l-lg">
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <div className="flex items-center gap-4">
+        <div className="aspect-square w-24 flex-shrink-0 relative bg-muted flex items-center justify-center rounded-l-lg">
            {product.imageUrl ? (
             <Image
                 src={product.imageUrl}
@@ -44,14 +44,14 @@ export function ProductCard({ product }: ProductCardProps) {
                 data-ai-hint={product.imageHint}
             />
           ) : (
-            <ImageIcon className="h-8 w-8 md:h-16 md:w-16 text-muted-foreground" />
+            <ImageIcon className="h-10 w-10 text-muted-foreground" />
           )}
         </div>
 
-        <div className="flex-grow py-2 pr-2 md:p-4">
-            <h3 className="font-semibold text-sm md:text-base leading-tight line-clamp-2 md:mb-1">{product.name}</h3>
+        <div className="flex-grow py-3 pr-3">
+            <h3 className="font-semibold text-base leading-tight line-clamp-2 mb-1">{product.name}</h3>
             <div className='flex items-end justify-between'>
-                <p className="text-sm md:text-lg font-bold text-primary mt-1">{formattedPrice}</p>
+                <p className="text-base font-bold text-primary mt-1">{formattedPrice}</p>
                 <Button onClick={handleAddToCart} size="icon" className="h-8 w-8 flex-shrink-0" aria-label={`Añadir ${product.name} al carrito`}>
                     <Plus className="h-5 w-5" />
                 </Button>

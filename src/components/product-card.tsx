@@ -1,9 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { PlusCircle, ImageIcon } from 'lucide-react';
+import { Plus, ImageIcon } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { useCart } from '@/components/cart-provider';
 import { useToast } from '@/hooks/use-toast';
@@ -31,34 +31,33 @@ export function ProductCard({ product }: ProductCardProps) {
   }).format(product.price);
 
   return (
-    <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
-      <CardHeader className="p-0">
-        <div className="aspect-[3/2] relative bg-muted flex items-center justify-center">
-          {product.imageUrl ? (
+    <Card className="overflow-hidden transition-all hover:shadow-lg">
+      <div className="flex items-center gap-3 md:block">
+        <div className="aspect-square w-24 flex-shrink-0 md:w-full md:aspect-[3/2] relative bg-muted flex items-center justify-center md:rounded-b-none rounded-l-lg">
+           {product.imageUrl ? (
             <Image
                 src={product.imageUrl}
                 alt={product.name}
                 fill
                 className="object-cover"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                sizes="(max-width: 768px) 30vw, (max-width: 1024px) 30vw, 25vw"
                 data-ai-hint={product.imageHint}
             />
           ) : (
-            <ImageIcon className="h-16 w-16 text-muted-foreground" />
+            <ImageIcon className="h-8 w-8 md:h-16 md:w-16 text-muted-foreground" />
           )}
         </div>
-      </CardHeader>
-      <CardContent className="p-4 flex-grow">
-        <CardTitle className="text-lg font-bold mb-1">{product.name}</CardTitle>
-        <p className="text-sm text-muted-foreground h-10">{product.description}</p>
-      </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-between items-center">
-        <p className="text-xl font-bold text-primary">{formattedPrice}</p>
-        <Button onClick={handleAddToCart} aria-label={`Añadir ${product.name} al carrito`}>
-          <PlusCircle className="mr-2 h-5 w-5" />
-          Añadir
-        </Button>
-      </CardFooter>
+
+        <div className="flex-grow py-2 pr-2 md:p-4">
+            <h3 className="font-semibold text-sm md:text-base leading-tight line-clamp-2 md:mb-1">{product.name}</h3>
+            <div className='flex items-end justify-between'>
+                <p className="text-sm md:text-lg font-bold text-primary mt-1">{formattedPrice}</p>
+                <Button onClick={handleAddToCart} size="icon" className="h-8 w-8 flex-shrink-0" aria-label={`Añadir ${product.name} al carrito`}>
+                    <Plus className="h-5 w-5" />
+                </Button>
+            </div>
+        </div>
+      </div>
     </Card>
   );
 }

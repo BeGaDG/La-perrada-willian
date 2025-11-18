@@ -222,7 +222,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                     {productToEdit && <input type="hidden" name="id" value={productToEdit.id} />}
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">Nombre</Label>
+                            <Label htmlFor="name" className="text-right">Nombre <span className="text-destructive">*</span></Label>
                             <Input id="name" name="name" defaultValue={productToEdit?.name} className="col-span-3" />
                             {errors?.name && <p className="col-span-4 text-xs text-destructive text-right">{errors.name[0]}</p>}
                         </div>
@@ -232,12 +232,12 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                              {errors?.description && <p className="col-span-4 text-xs text-destructive text-right">{errors.description[0]}</p>}
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="price" className="text-right">Precio</Label>
+                            <Label htmlFor="price" className="text-right">Precio <span className="text-destructive">*</span></Label>
                             <Input id="price" name="price" type="number" step="1" defaultValue={productToEdit?.price} className="col-span-3" />
                              {errors?.price && <p className="col-span-4 text-xs text-destructive text-right">{errors.price[0]}</p>}
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="category" className="text-right">Categoría</Label>
+                            <Label htmlFor="category" className="text-right">Categoría <span className="text-destructive">*</span></Label>
                              <Select name="category" defaultValue={productToEdit?.category}>
                                 <SelectTrigger className="col-span-3">
                                     <SelectValue placeholder={isLoadingCategories ? "Cargando..." : "Selecciona una categoría"} />

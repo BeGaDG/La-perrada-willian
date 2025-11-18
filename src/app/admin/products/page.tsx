@@ -33,6 +33,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
 import menuData from '@/lib/menu-data.json';
@@ -41,6 +42,7 @@ import menuData from '@/lib/menu-data.json';
 function DeleteProductDialog({ productId }: { productId: string }) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
 
   const handleDelete = async () => {
     if (!firestore) return;
@@ -58,11 +60,13 @@ function DeleteProductDialog({ productId }: { productId: string }) {
         description: 'No se pudo eliminar el producto.',
       });
       console.error("Error deleting product: ", error);
+    } finally {
+        setIsAlertOpen(false);
     }
   };
 
   return (
-    <AlertDialog>
+    <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
       <AlertDialogTrigger asChild>
         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
           Eliminar
@@ -99,29 +103,25 @@ function SeedDatabaseButton() {
     try {
       const batch = writeBatch(firestore);
       
-      // Delete existing products
       const productsSnapshot = await getDocs(collection(firestore, "products"));
       productsSnapshot.forEach(doc => {
         batch.delete(doc.ref);
       });
       
-      // Delete existing categories
       const categoriesSnapshot = await getDocs(collection(firestore, "categories"));
       categoriesSnapshot.forEach(doc => {
         batch.delete(doc.ref);
       });
 
-      // Seed Categories
       const categoriesCollection = collection(firestore, "categories");
       const categoryMap: Record<string, string> = {};
 
       for (const categoryName of menuData.categories) {
         const docRef = doc(categoriesCollection);
         batch.set(docRef, { name: categoryName });
-        categoryMap[categoryName] = categoryName; // In this app category name is the ID for relations
+        categoryMap[categoryName] = categoryName;
       }
 
-      // Seed Products
       const productsRef = collection(firestore, 'products');
       menuData.products.forEach(product => {
         const docRef = doc(productsRef);
@@ -247,7 +247,6 @@ export default function AdminProductsPage() {
                             height="64"
                             src={product.imageUrl}
                             width="64"
-                            data-ai-hint={product.imageHint}
                         />
                     ) : (
                         <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">

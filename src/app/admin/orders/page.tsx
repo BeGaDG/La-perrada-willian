@@ -63,6 +63,7 @@ function PrintTicketDialog({ order }: { order: Order }) {
           <p>-------------------------</p>
           <p>Pedido: #{order.id.substring(0, 5)}</p>
           <p>Cliente: {order.customerName}</p>
+          <p>Dirección: {order.customerAddress}</p>
           <p>Fecha: {formattedDate}</p>
           <p>-------------------------</p>
           <div className='space-y-1 my-2'>

@@ -1,8 +1,9 @@
-'use server';
 
+import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
 
+// Configure Cloudinary using environment variables
 cloudinary.config({ 
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
   api_key: process.env.CLOUDINARY_API_KEY, 
@@ -11,19 +12,22 @@ cloudinary.config({
 });
 
 async function buffer(file: File) {
-    const bytes = await file.arrayBuffer()
-    return Buffer.from(bytes)
+    const bytes = await file.arrayBuffer();
+    return Buffer.from(bytes);
 }
 
-export async function uploadImage(formData: FormData): Promise<{ imageUrl: string }> {
+export async function POST(request: Request) {
+  try {
+    const formData = await request.formData();
     const file = formData.get('image') as File;
+
     if (!file) {
-        throw new Error('No file provided');
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
     const fileBuffer = await buffer(file);
 
-    return new Promise((resolve, reject) => {
+    const imageUrl = await new Promise<string>((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
             { resource_type: 'image' },
             (error, result) => {
@@ -34,14 +38,21 @@ export async function uploadImage(formData: FormData): Promise<{ imageUrl: strin
                 if (!result) {
                     return reject(new Error('Cloudinary did not return a result.'));
                 }
-                resolve({ imageUrl: result.secure_url });
+                resolve(result.secure_url);
             }
         );
-
+        
         const readableStream = new Readable();
-        readableStream._read = () => {}; // _read is required but can be a no-op
+        readableStream._read = () => {};
         readableStream.push(fileBuffer);
         readableStream.push(null);
         readableStream.pipe(uploadStream);
     });
+
+    return NextResponse.json({ imageUrl });
+
+  } catch (error) {
+    console.error('API Upload Error:', error);
+    return NextResponse.json({ error: 'Failed to process upload' }, { status: 500 });
+  }
 }

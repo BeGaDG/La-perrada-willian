@@ -13,7 +13,6 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { uploadImage } from '@/lib/cloudinary';
 import { UploadCloud, X, Loader2 } from 'lucide-react';
 
 const productSchema = z.object({
@@ -38,7 +37,16 @@ function ImageUploader({ value, onValueChange }: { value: string; onValueChange:
         formData.append('image', file);
 
         try {
-            const result = await uploadImage(formData);
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error('Upload failed');
+            }
+
+            const result = await response.json();
             onValueChange(result.imageUrl);
             toast({ title: "Imagen subida", description: "La imagen se ha subido con éxito a Cloudinary." });
         } catch (error) {

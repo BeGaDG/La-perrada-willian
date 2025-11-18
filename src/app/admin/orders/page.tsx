@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { updateOrderStatus } from '@/lib/actions';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const kanbanColumns: { title: string; status: OrderStatus }[] = [
   { title: 'Nuevos Pedidos', status: 'PENDIENTE_PAGO' },
@@ -41,20 +44,43 @@ const formatPrice = (price: number) => {
     }).format(price);
 }
 
-function OrderCard({ order, onAdvance }: { order: Order, onAdvance: (orderId: string) => void }) {
-  const handlePrint = () => {
-    let ticket = `--- TICKET DE COCINA ---\n\n`;
-    ticket += `Pedido #${order.id.substring(0, 5)}...\n`;
-    ticket += `Cliente: ${order.customerName}\n`;
-    ticket += `------------------------\n`;
-    order.items.forEach(item => {
-        ticket += `${item.quantity}x ${item.productName}\n`;
-    });
-    ticket += `------------------------\n`;
-    console.log(ticket);
-    alert('Ticket de cocina impreso en la consola.');
-  }
+function PrintTicketDialog({ order }: { order: Order }) {
+  const formattedDate = order.orderDate
+    ? format(order.orderDate.toDate(), "Pp", { locale: es })
+    : 'N/A';
 
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full">Imprimir Ticket</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-xs sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className='font-mono tracking-widest text-center'>LA PERRADA DE WILLIAM</DialogTitle>
+        </DialogHeader>
+        <div className="font-mono text-sm bg-stone-50 p-4 rounded-md">
+          <p>TICKET DE COCINA</p>
+          <p>-------------------------</p>
+          <p>Pedido: #{order.id.substring(0, 5)}</p>
+          <p>Cliente: {order.customerName}</p>
+          <p>Fecha: {formattedDate}</p>
+          <p>-------------------------</p>
+          <div className='space-y-1 my-2'>
+            {order.items.map((item, index) => (
+              <p key={index} className='flex justify-between'>
+                <span>{item.quantity}x {item.productName}</span>
+              </p>
+            ))}
+          </div>
+          <p>-------------------------</p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+function OrderCard({ order, onAdvance }: { order: Order, onAdvance: (orderId: string) => void }) {
   return (
     <Card>
       <CardHeader>
@@ -77,7 +103,7 @@ function OrderCard({ order, onAdvance }: { order: Order, onAdvance: (orderId: st
                 {getActionLabel(order.status)}
             </Button>
          )}
-         <Button onClick={handlePrint} variant="outline" className="w-full">Imprimir Ticket</Button>
+         <PrintTicketDialog order={order} />
       </CardFooter>
     </Card>
   );

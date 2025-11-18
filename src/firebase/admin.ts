@@ -5,20 +5,12 @@ import * as admin from 'firebase-admin';
  * This function handles lazy initialization to ensure `initializeApp` is called only once.
  */
 export function getAdminFirestore() {
-  // Check if the default app is already initialized.
+  // Check if the default app is already initialized. If not, initialize it.
   if (!admin.apps.length) {
-    try {
-      // These variables are automatically set by Firebase App Hosting.
-      // Calling initializeApp() without arguments uses these variables.
-      admin.initializeApp();
-    } catch (e) {
-      // This catch block is important for local development or environments
-      // where server-side environment variables might not be set.
-      console.error('Admin SDK initialization failed:', e);
-      // Depending on the use-case, you might want to re-throw the error
-      // or handle it differently. For now, we log it.
-    }
+    // When running in a Firebase or Google Cloud environment, the SDK will
+    // automatically detect the service account credentials and project ID.
+    admin.initializeApp();
   }
-  // Return the initialized Firestore instance.
+  // Return the initialized Firestore instance from the default app.
   return admin.firestore();
 }

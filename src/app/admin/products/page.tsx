@@ -116,8 +116,8 @@ function SeedDatabaseButton() {
         batch.set(docRef, {
           ...product,
           price: product.price || 0,
-          description: product.description || `Un delicioso ${product.name}`,
-          imageUrl: product.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`,
+          description: `Un delicioso ${product.name}`,
+          imageUrl: `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`,
           imageHint: product.category.toLowerCase(),
           category: categoryMap[product.category] || product.category
         });
@@ -143,7 +143,7 @@ function SeedDatabaseButton() {
   }
 
   return (
-     <AlertDialog>
+    <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button variant="outline" disabled={isLoading}>
           <Upload className="mr-2 h-4 w-4" />
@@ -165,6 +165,7 @@ function SeedDatabaseButton() {
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

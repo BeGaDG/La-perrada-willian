@@ -23,6 +23,44 @@ const formatPrice = (price: number) => {
     }).format(price);
 }
 
+function OrderSummary() {
+    const { items, totalPrice, totalItems } = useCart();
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Resumen del Pedido</CardTitle>
+                <CardDescription>Tienes {totalItems} {totalItems === 1 ? 'producto' : 'productos'} en tu carrito.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {items.map(item => (
+                     <div key={item.product.id} className="flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                             {item.product.imageUrl ? (
+                                <Image src={item.product.imageUrl} alt={item.product.name} width={48} height={48} className="rounded-md aspect-square object-cover" data-ai-hint={item.product.imageHint || ''} />
+                             ) : (
+                                <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
+                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                             )}
+                            <div>
+                                <p className="font-semibold">{item.product.name}</p>
+                                <p className="text-sm text-muted-foreground">{item.quantity} x {formatPrice(item.product.price)}</p>
+                            </div>
+                        </div>
+                        <p className="font-semibold">{formatPrice(item.quantity * item.product.price)}</p>
+                    </div>
+                ))}
+                 <Separator />
+                <div className="flex justify-between font-bold text-lg">
+                    <span>Total</span>
+                    <span>{formatPrice(totalPrice)}</span>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function CheckoutPage() {
     const { items, totalPrice, totalItems, clearCart } = useCart();
     const router = useRouter();
@@ -80,74 +118,79 @@ export default function CheckoutPage() {
 
     return (
         <div className="container py-12 md:py-16">
-            <h1 className="text-3xl font-bold mb-8 font-headline">Finalizar Compra</h1>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                <div>
-                    <h2 className="text-2xl font-semibold mb-4">Información de Entrega</h2>
-                    <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <Label htmlFor="name">Nombre Completo</Label>
-                            <Input id="name" name="name" required />
-                        </div>
-                        <div>
-                            <Label htmlFor="phone">Teléfono de Contacto</Label>
-                            <Input id="phone" name="phone" type="tel" required />
-                        </div>
-                        <div>
-                            <Label htmlFor="address">Dirección de Entrega</Label>
-                            <Input id="address" name="address" required />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-medium mb-2">Método de Pago</h3>
-                            <RadioGroup name="paymentMethod" defaultValue="EFECTIVO" className="space-y-2">
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="EFECTIVO" id="efectivo" />
-                                    <Label htmlFor="efectivo">Efectivo contra entrega</Label>
+            <h1 className="text-3xl font-bold mb-8 font-headline text-center">Finalizar Compra</h1>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 relative">
+                
+                {/* Columna Izquierda: Resumen en móvil y Formulario en desktop */}
+                <div className="lg:hidden">
+                    <OrderSummary />
+                </div>
+
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>1. Información de Entrega</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <Label htmlFor="name">Nombre Completo</Label>
+                                    <Input id="name" name="name" required autoComplete="name" />
                                 </div>
-                                <div className="flex items-center space-x-2">
+                                <div>
+                                    <Label htmlFor="phone">Teléfono de Contacto</Label>
+                                    <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
+                                </div>
+                                <div>
+                                    <Label htmlFor="address">Dirección de Entrega</Label>
+                                    <Input id="address" name="address" required autoComplete="street-address" />
+                                </div>
+                             </form>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>2. Método de Pago</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <RadioGroup form="checkout-form" name="paymentMethod" defaultValue="EFECTIVO" className="space-y-2">
+                                <div className="flex items-center space-x-3 p-3 rounded-md border has-[input:checked]:border-primary">
+                                    <RadioGroupItem value="EFECTIVO" id="efectivo" />
+                                    <Label htmlFor="efectivo" className="flex-grow cursor-pointer">Efectivo contra entrega</Label>
+                                </div>
+                                <div className="flex items-center space-x-3 p-3 rounded-md border has-[input:checked]:border-primary">
                                     <RadioGroupItem value="TRANSFERENCIA" id="transferencia" />
-                                    <Label htmlFor="transferencia">Transferencia (Bancolombia/Nequi)</Label>
+                                    <Label htmlFor="transferencia" className="flex-grow cursor-pointer">Transferencia (Bancolombia/Nequi)</Label>
                                 </div>
                             </RadioGroup>
-                        </div>
-                    </form>
+                        </CardContent>
+                    </Card>
                 </div>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Resumen del Pedido</CardTitle>
-                        <CardDescription>Tienes {totalItems} productos en tu carrito.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {items.map(item => (
-                             <div key={item.product.id} className="flex justify-between items-center">
-                                <div className="flex items-center gap-4">
-                                     {item.product.imageUrl ? (
-                                        <Image src={item.product.imageUrl} alt={item.product.name} width={48} height={48} className="rounded-md aspect-square object-cover" data-ai-hint={item.product.imageHint || ''} />
-                                     ) : (
-                                        <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
-                                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                        </div>
-                                     )}
-                                    <div>
-                                        <p className="font-semibold">{item.product.name}</p>
-                                        <p className="text-sm text-muted-foreground">{item.quantity} x {formatPrice(item.product.price)}</p>
-                                    </div>
-                                </div>
-                                <p className="font-semibold">{formatPrice(item.quantity * item.product.price)}</p>
-                            </div>
-                        ))}
-                         <Separator />
-                        <div className="flex justify-between font-bold text-lg">
-                            <span>Total</span>
-                            <span>{formatPrice(totalPrice)}</span>
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                         <Button form="checkout-form" type="submit" className="w-full" size="lg" disabled={isPending}>
-                             {isPending ? "Finalizando pedido..." : "Finalizar Pedido"}
-                        </Button>
-                    </CardFooter>
-                </Card>
+                
+                {/* Columna Derecha: Resumen en Desktop */}
+                <div className="hidden lg:block lg:sticky top-24 self-start">
+                    <OrderSummary />
+                </div>
+            </div>
+
+             {/* Footer Fijo en Móvil */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex justify-between items-center">
+                <div className="font-bold text-lg">
+                    <span>Total: </span>
+                    <span>{formatPrice(totalPrice)}</span>
+                </div>
+                <Button form="checkout-form" type="submit" size="lg" disabled={isPending}>
+                     {isPending ? "Finalizando..." : "Finalizar Pedido"}
+                </Button>
+            </div>
+            
+            {/* Botón de envío para Desktop */}
+            <div className="hidden lg:flex justify-end mt-8">
+                 <Button form="checkout-form" type="submit" size="lg" className="w-full lg:w-auto lg:max-w-xs" disabled={isPending}>
+                     {isPending ? "Finalizando pedido..." : "Finalizar Pedido"}
+                </Button>
             </div>
         </div>
     );

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { collection, addDoc, serverTimestamp, doc, updateDoc, Timestamp } from "firebase/firestore";
-import { getSdks } from "@/firebase";
+import { initializeFirebase } from "@/firebase";
 import type { OrderStatus } from "./types";
 
 const MOCK_USER_ID = 'user-123';
@@ -23,7 +23,7 @@ type CreateOrderPayload = {
 
 
 export async function createOrder(payload: CreateOrderPayload) {
-    const { firestore } = getSdks();
+    const { firestore } = initializeFirebase();
     const ordersCollection = collection(firestore, "orders");
 
     const newOrder = {
@@ -46,7 +46,7 @@ export async function createOrder(payload: CreateOrderPayload) {
 }
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
-  const { firestore } = getSdks();
+  const { firestore } = initializeFirebase();
   const orderRef = doc(firestore, "orders", orderId);
 
   const statusUpdate: { status: OrderStatus; [key: string]: any } = { status };

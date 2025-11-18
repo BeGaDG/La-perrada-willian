@@ -1,3 +1,5 @@
+'use client';
+
 import { products } from "@/lib/data";
 import {
   Table,

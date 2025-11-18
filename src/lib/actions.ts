@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { collection, addDoc, serverTimestamp, doc, updateDoc, Timestamp } from "firebase/firestore";
-import { initializeFirebase } from "@/firebase";
+import { initializeFirebase } from "@/firebase/init";
 import type { OrderStatus } from "./types";
 
 const MOCK_USER_ID = 'user-123';

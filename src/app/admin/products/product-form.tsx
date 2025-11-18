@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import React, { useEffect, useState, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ function SubmitButton() {
 
 export function ProductForm({ children, productToEdit }: { children: React.ReactNode, productToEdit?: Product }) {
     const [open, setOpen] = useState(false);
-    const [state, formAction] = useFormState(saveProduct, initialState);
+    const [state, formAction] = useActionState(saveProduct, initialState);
     const { toast } = useToast();
 
     useEffect(() => {

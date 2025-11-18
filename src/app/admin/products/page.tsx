@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from "react";
-import { collection, doc, deleteDoc } from "firebase/firestore";
+import { useMemo, useState } from "react";
+import { collection, doc, deleteDoc, writeBatch } from "firebase/firestore";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import {
   Table,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Upload } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +36,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
+import menuData from '@/lib/menu-data.json';
+
 
 function DeleteProductDialog({ productId }: { productId: string }) {
   const firestore = useFirestore();
@@ -85,6 +87,88 @@ function DeleteProductDialog({ productId }: { productId: string }) {
   );
 }
 
+function SeedDatabaseButton() {
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSeed = async () => {
+    if (!firestore) return;
+    setIsLoading(true);
+
+    try {
+      const batch = writeBatch(firestore);
+      
+      // Seed Categories
+      const categoriesCollection = collection(firestore, "categories");
+      const categoryMap: Record<string, string> = {};
+
+      for (const categoryName of menuData.categories) {
+        const docRef = doc(categoriesCollection);
+        batch.set(docRef, { name: categoryName });
+        categoryMap[categoryName] = categoryName; // In this app category name is the ID for relations
+      }
+
+      // Seed Products
+      const productsRef = collection(firestore, 'products');
+      menuData.products.forEach(product => {
+        const docRef = doc(productsRef);
+        batch.set(docRef, {
+          ...product,
+          price: product.price || 0,
+          description: product.description || `Un delicioso ${product.name}`,
+          imageUrl: `https://picsum.photos/seed/${product.name.replace(/\s/g, '')}/600/400`,
+          imageHint: product.category.toLowerCase(),
+          category: categoryMap[product.category] || product.category
+        });
+      });
+
+      await batch.commit();
+
+      toast({
+        title: '¡Menú cargado!',
+        description: 'Todos los productos y categorías han sido añadidos a la base de datos.'
+      });
+
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: 'Error al cargar el menú',
+        description: 'No se pudieron añadir los productos. Revisa la consola para más detalles.',
+      });
+      console.error("Error seeding database: ", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+     <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline" disabled={isLoading}>
+          <Upload className="mr-2 h-4 w-4" />
+          {isLoading ? 'Cargando...' : 'Cargar Menú de Muestra'}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Cargar el menú de muestra?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta acción añadirá todas las categorías y productos del archivo de muestra a tu base de datos.
+            No eliminará los productos existentes. ¿Deseas continuar?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleSeed}>
+            Sí, cargar menú
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    )
+}
+
 
 export default function AdminProductsPage() {
   const firestore = useFirestore();
@@ -93,14 +177,17 @@ export default function AdminProductsPage() {
 
   return (
     <div>
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 gap-4">
             <h1 className="text-3xl font-bold font-headline">Gestión de Productos</h1>
-            <ProductForm>
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Producto
-              </Button>
-            </ProductForm>
+            <div className="flex gap-2">
+              <SeedDatabaseButton />
+              <ProductForm>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Añadir Producto
+                </Button>
+              </ProductForm>
+            </div>
         </div>
        <div className="rounded-lg border">
         <Table>
@@ -126,7 +213,7 @@ export default function AdminProductsPage() {
             )}
             {!isLoading && products?.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={6} className="text-center">No se encontraron productos. ¡Añade el primero!</TableCell>
+                    <TableCell colSpan={6} className="text-center">No se encontraron productos. ¡Carga el menú de muestra o añade uno nuevo!</TableCell>
                 </TableRow>
             )}
             {products?.map((product) => (

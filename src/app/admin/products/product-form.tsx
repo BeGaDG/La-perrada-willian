@@ -62,8 +62,8 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                     const productsCollection = collection(firestore, 'products');
                     const newProduct = {
                         ...data,
-                        imageUrl: 'https://picsum.photos/seed/newproduct/600/400',
-                        imageHint: 'food placeholder'
+                        imageUrl: `https://picsum.photos/seed/${data.name.replace(/\s/g, '')}/600/400`,
+                        imageHint: data.category.toLowerCase()
                     };
                     await addDoc(productsCollection, newProduct);
                 }
@@ -137,5 +137,3 @@ export function ProductForm({ children, productToEdit }: { children: React.React
         </Dialog>
     );
 }
-
-    

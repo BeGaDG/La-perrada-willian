@@ -1,12 +1,12 @@
 import { products } from '@/lib/data';
 import type { Product } from '@/lib/types';
 import { ProductCard } from '@/components/product-card';
-import { Menu as Hamburger, Flame, GlassWater, Drumstick } from 'lucide-react';
+import { Menu, Flame, GlassWater, Drumstick } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 const categoryIcons: Record<string, LucideIcon> = {
   'Perros Calientes': Flame,
-  'Hamburguesas': Hamburger,
+  'Hamburguesas': Menu,
   'Bebidas': GlassWater,
   'Otros': Drumstick,
 };

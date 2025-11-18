@@ -48,7 +48,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                     <DialogTitle>{productToEdit ? 'Editar Producto' : 'Añadir Producto'}</DialogTitle>
                     <DialogDescription>
                         {productToEdit ? 'Actualiza los detalles del producto.' : 'Añade un nuevo producto al menú.'}
-                    </DailogDescription>
+                    </DialogDescription>
                 </DialogHeader>
                 <form action={formAction}>
                     <input type="hidden" name="id" value={productToEdit?.id} />

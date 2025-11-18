@@ -1,0 +1,257 @@
+{
+  "entities": {
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a product in the menu of La Perrada de William.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Product entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the product."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the product."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the product (e.g., 'Perros Calientes', 'Hamburguesas', 'Bebidas')."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the product image.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "price",
+        "category"
+      ]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents an order placed by a customer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Order entity."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to Customer. Unique identifier of the customer who placed the order."
+        },
+        "items": {
+          "type": "array",
+          "description": "Array of order items, each containing product details and quantity.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount of the order."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the order (e.g., 'PENDIENTE_PAGO', 'CONFIRMADO', 'EN_PREPARACION', 'EN_CAMINO', 'ENTREGADO')."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method used for the order (e.g., 'EFECTIVO', 'TRANSFERENCIA')."
+        },
+        "orderDate": {
+          "type": "string",
+          "description": "Date and time when the order was placed.",
+          "format": "date-time"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Name of the customer placing the order."
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Phone number of the customer placing the order."
+        },
+        "customerAddress": {
+          "type": "string",
+          "description": "Address of the customer for delivery."
+        }
+      },
+      "required": [
+        "id",
+        "customerId",
+        "items",
+        "totalAmount",
+        "status",
+        "paymentMethod",
+        "orderDate",
+        "customerName",
+        "customerPhone",
+        "customerAddress"
+      ]
+    },
+    "Customer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Customer",
+      "type": "object",
+      "description": "Represents a customer placing an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Customer entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the customer."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the customer."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the customer."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "phone",
+        "address"
+      ]
+    },
+    "OrderItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrderItem",
+      "type": "object",
+      "description": "Represents an item within an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the OrderItem entity."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. Identifier of the order this item belongs to."
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. Identifier of the product that was ordered."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the product ordered."
+        },
+        "unitPrice": {
+          "type": "number",
+          "description": "Price of the product at the time of the order."
+        },
+        "productName": {
+          "type": "string",
+          "description": "Name of the product. This duplicates the product name for easier access within the order."
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "productId",
+        "quantity",
+        "unitPrice",
+        "productName"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Stores product information for the menu. Admins can create, update, and delete products.  Customers can only read.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Stores order information.  Includes denormalized customer data (customerName, customerPhone, customerAddress) and customerId for authorization independence. Customers can create orders and read their own orders. Admins can update order status.",
+          "params": [
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/customers/{customerId}",
+        "definition": {
+          "entityName": "Customer",
+          "schema": {
+            "$ref": "#/backend/entities/Customer"
+          },
+          "description": "Stores customer information. While the current rules don't directly use this collection, it can be used to store additional customer details if required. This also denormalizes customer data (customerName, customerPhone, customerAddress) into the orders collection for authorization independence.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "Unique identifier for the customer."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/orders/{orderId}/orderItems/{orderItemId}",
+        "definition": {
+          "entityName": "OrderItem",
+          "schema": {
+            "$ref": "#/backend/entities/OrderItem"
+          },
+          "description": "Stores individual items within an order.  Customers can create orders and read their own orders. Admins can update order status.  Administrators manage products.",
+          "params": [
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            },
+            {
+              "name": "orderItemId",
+              "description": "Unique identifier for the order item."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to facilitate a secure and scalable ordering system for \"La Perrada de William.\" It prioritizes Authorization Independence by avoiding hierarchical `get()` calls in security rules, thus supporting atomic operations (transactions/batches). The structure clearly segregates data based on access needs and uses consistent access modeling for authorization.\n\n**Authorization Independence (Denormalization):**  The `orders` collection includes `customerId`, `customerName`, `customerPhone`, and `customerAddress`. While `customerId` could be used to reference the `/users/{customerId}` document (if customers were modeled as users with accounts), we avoid this to maintain authorization independence. Security rules can directly validate the `customerId` in the `request.resource.data` without needing to fetch the user document.  Similarly, fields like `customerName`, `customerPhone`, and `customerAddress` are denormalized directly into the `orders` collection.\n\n**Structural Segregation:** The `products` collection stores all product information, requiring only admin access for modification. The `orders` collection stores all order information, segregated from user details to simplify security rules.\n\n**Access Modeling:** Orders are created by any user, but read access is limited to the user who created the order (based on `customerId`). Admin users can update the order status. The `roles_admin` collection uses existence over content to determine admin status, further simplifying security rules.\n\n**QAPs Support:**\n*   Secure `list` operations on `products` are achieved by allowing unauthenticated reads for all products (the menu). Secure `list` operations on `orders` are achieved by only allowing authenticated users to list orders where the `customerId` matches their `uid`, ensuring users can only see their own orders."
+  }
+}

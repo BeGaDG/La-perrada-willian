@@ -1,31 +1,79 @@
+/**
+ * @file Firestore Security Rules for La Perrada de William.
+ *
+ * @corePhilosophy This ruleset enforces a user-ownership model for orders, where users can only access their own order data, combined with public read access to the product catalog.
+ * @dataStructure Data is organized into top-level collections for 'products', 'orders', and 'customers'. Order items are stored as subcollections under each order.
+ * @keySecurityDecisions Public read access is granted for products to allow unauthenticated menu viewing. Orders are secured based on customerId, with create access allowed for authenticated users and read/write access restricted to the order owner.
+ * @denormalization The `orders` collection denormalizes customer data (`customerName`, `customerPhone`, `customerAddress`, `customerId`) to enable authorization without requiring additional reads to the `customers` collection. This improves performance and maintains authorization independence.
+ * @structuralSegregation Publicly readable product data is separated from private order data, which is secured by customerId.
+ */
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    function isAdmin() {
-      return request.auth.token.admin == true;
+
+    /**
+     * @description Allows anyone to read product information, but only allows admins to create, update, or delete products.
+     * @path /products/{productId}
+     * @allow (get, list)
+     * @deny (create, update, delete)
+     * @principle Allows public read access for products (the menu).
+     */
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create, update, delete: if false; // TODO: Add Admin role.
+    }
+
+    /**
+     * @description Allows users to create orders and only read/write their own orders.
+     * @path /orders/{orderId}
+     * @allow (create) Authenticated user creates a new order with customerId matching their UID.
+     * @allow (get, list) Authenticated user reads their own order.
+     * @deny (get, list) Authenticated user attempts to read another user's order.
+     * @deny (update, delete) Non-owner attempts to update or delete the order.
+     * @principle Enforces user-ownership for orders based on customerId and authenticated user ID.
+     */
+    match /orders/{orderId} {
+      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow get, list: if isSignedIn() && isOwner(resource.data.customerId);
+      allow update, delete: if isSignedIn() && isExistingOwner(resource.data.customerId);
+    }
+
+    /**
+     * @description Allows users to create order items and only read/write their own order items.
+     * @path /orders/{orderId}/orderItems/{orderItemId}
+     * @allow (create) Authenticated user creates a new order item under their own order.
+     * @allow (get, list) Authenticated user reads their own order items.
+     * @deny (get, list) Authenticated user attempts to read another user's order items.
+     * @deny (update, delete) Non-owner attempts to update or delete the order item.
+     * @principle Enforces user-ownership for order items based on customerId in parent order document.
+     */
+    match /orders/{orderId}/orderItems/{orderItemId} {
+      allow create: if isSignedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid;
+      allow get, list: if isSignedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid;
+      allow update, delete: if false; // no updates or deletes.
+    }
+
+    /**
+     * @description No direct access to customers collection.
+     * @path /customers/{customerId}
+     * @allow none
+     * @principle The customer data is mostly denormalized to the orders collection, direct access not required
+     */
+    match /customers/{customerId} {
+      allow get, list, create, update, delete: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
     }
 
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
 
-    match /productos/{productId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /pedidos/{orderId} {
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.status == 'PENDIENTE_PAGO';
-
-      allow read: if isAdmin() || isOwner(resource.data.userId);
-
-      allow update: if isAdmin();
-
-      allow delete: if false;
+   function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
     }
   }
 }

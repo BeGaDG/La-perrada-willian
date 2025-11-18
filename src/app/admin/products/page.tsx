@@ -36,7 +36,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
-import { revalidatePath } from "next/cache";
 
 function DeleteProductDialog({ productId }: { productId: string }) {
   const firestore = useFirestore();
@@ -51,10 +50,6 @@ function DeleteProductDialog({ productId }: { productId: string }) {
         title: 'Producto eliminado',
         description: 'El producto ha sido eliminado con éxito.'
       });
-      // This won't work on the client, but for now we leave it
-      // to avoid breaking changes if it were to run on the server.
-      // revalidatePath('/admin/products');
-      // revalidatePath('/');
     } catch (error) {
        toast({
         variant: "destructive",

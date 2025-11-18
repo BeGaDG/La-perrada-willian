@@ -1,8 +1,8 @@
 'use server';
 
 import { revalidatePath } from "next/cache";
-import { collection, addDoc, serverTimestamp, doc, updateDoc, Timestamp } from "firebase/firestore";
-import { initializeFirebase } from "@/firebase/init";
+import { FieldValue } from 'firebase-admin/firestore';
+import { getAdminFirestore } from "@/firebase/admin";
 import type { OrderStatus } from "./types";
 
 const MOCK_USER_ID = 'user-123';
@@ -23,18 +23,18 @@ type CreateOrderPayload = {
 
 
 export async function createOrder(payload: CreateOrderPayload) {
-    const { firestore } = initializeFirebase();
-    const ordersCollection = collection(firestore, "orders");
+    const firestore = getAdminFirestore();
+    const ordersCollection = firestore.collection("orders");
 
     const newOrder = {
         ...payload,
         customerId: MOCK_USER_ID, 
         status: 'PENDIENTE_PAGO' as const,
-        orderDate: serverTimestamp(),
+        orderDate: FieldValue.serverTimestamp(),
     };
 
     try {
-        const docRef = await addDoc(ordersCollection, newOrder);
+        const docRef = await ordersCollection.add(newOrder);
         console.log("Order created with ID: ", docRef.id);
         
         revalidatePath('/my-orders');
@@ -46,13 +46,12 @@ export async function createOrder(payload: CreateOrderPayload) {
 }
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
-  const { firestore } = initializeFirebase();
-  const orderRef = doc(firestore, "orders", orderId);
+  const firestore = getAdminFirestore();
+  const orderRef = firestore.doc(`orders/${orderId}`);
 
   const statusUpdate: { status: OrderStatus; [key: string]: any } = { status };
 
-  // Add a timestamp for the new status
-  const now = serverTimestamp();
+  const now = FieldValue.serverTimestamp();
   if (status === 'EN_PREPARACION') {
     statusUpdate.confirmedAt = now;
   } else if (status === 'LISTO_REPARTO') {
@@ -62,7 +61,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   }
 
   try {
-    await updateDoc(orderRef, statusUpdate);
+    await orderRef.update(statusUpdate);
     console.log(`Order ${orderId} updated to ${status}`);
     
     revalidatePath('/admin/orders');

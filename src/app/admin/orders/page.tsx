@@ -110,14 +110,14 @@ export default function AdminOrdersPage() {
       prevOrders.map(o => o.id === orderId ? { ...o, status: next } : o)
     );
 
-    // Call server action in the background
-    updateOrderStatus(orderId, next).catch(error => {
-      console.error("Failed to update order status:", error);
-      // Revert UI change on error
-      setLocalOrders(prevOrders =>
-        prevOrders.map(o => o.id === orderId ? { ...o, status: orderToUpdate.status } : o)
-      );
-    });
+    // Call server action in the background - DISABLED FOR DEMO
+    // updateOrderStatus(orderId, next).catch(error => {
+    //   console.error("Failed to update order status:", error);
+    //   // Revert UI change on error
+    //   setLocalOrders(prevOrders =>
+    //     prevOrders.map(o => o.id === orderId ? { ...o, status: orderToUpdate.status } : o)
+    //   );
+    // });
   };
 
   const ordersByStatus = useMemo(() => {

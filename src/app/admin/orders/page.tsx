@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { type Order, type OrderStatus } from '@/lib/types';
@@ -41,15 +41,7 @@ const formatPrice = (price: number) => {
     }).format(price);
 }
 
-function OrderCard({ order }: { order: Order }) {
-
-  const handleAdvanceState = async () => {
-    const next = nextStatus[order.status];
-    if (next) {
-        await updateOrderStatus(order.id, next);
-    }
-  };
-
+function OrderCard({ order, onAdvance }: { order: Order, onAdvance: (orderId: string) => void }) {
   const handlePrint = () => {
     let ticket = `--- TICKET DE COCINA ---\n\n`;
     ticket += `Pedido #${order.id.substring(0, 5)}...\n`;
@@ -81,7 +73,7 @@ function OrderCard({ order }: { order: Order }) {
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
          {nextStatus[order.status] && (
-            <Button onClick={handleAdvanceState} className="w-full whitespace-normal h-auto">
+            <Button onClick={() => onAdvance(order.id)} className="w-full whitespace-normal h-auto">
                 {getActionLabel(order.status)}
             </Button>
          )}
@@ -96,7 +88,37 @@ export default function AdminOrdersPage() {
   const firestore = useFirestore();
   const ordersRef = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
   const ordersQuery = useMemoFirebase(() => ordersRef && query(ordersRef, orderBy('orderDate', 'desc')), [ordersRef]);
-  const { data: orders, isLoading } = useCollection<Order>(ordersQuery);
+  const { data: remoteOrders, isLoading } = useCollection<Order>(ordersQuery);
+
+  const [localOrders, setLocalOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    if (remoteOrders) {
+      setLocalOrders(remoteOrders);
+    }
+  }, [remoteOrders]);
+
+  const handleAdvanceState = (orderId: string) => {
+    const orderToUpdate = localOrders.find(o => o.id === orderId);
+    if (!orderToUpdate) return;
+    
+    const next = nextStatus[orderToUpdate.status];
+    if (!next) return;
+
+    // Optimistic UI update
+    setLocalOrders(prevOrders => 
+      prevOrders.map(o => o.id === orderId ? { ...o, status: next } : o)
+    );
+
+    // Call server action in the background
+    updateOrderStatus(orderId, next).catch(error => {
+      console.error("Failed to update order status:", error);
+      // Revert UI change on error
+      setLocalOrders(prevOrders =>
+        prevOrders.map(o => o.id === orderId ? { ...o, status: orderToUpdate.status } : o)
+      );
+    });
+  };
 
   const ordersByStatus = useMemo(() => {
     const grouped: Record<OrderStatus, Order[]> = {
@@ -106,15 +128,15 @@ export default function AdminOrdersPage() {
       COMPLETADO: [],
       CANCELADO: [],
     };
-    orders?.forEach(order => {
+    localOrders.forEach(order => {
       if (grouped[order.status]) {
         grouped[order.status].push(order);
       }
     });
     return grouped;
-  }, [orders]);
+  }, [localOrders]);
 
-  if (isLoading) {
+  if (isLoading && localOrders.length === 0) {
     return <p>Cargando pedidos...</p>;
   }
 
@@ -128,7 +150,7 @@ export default function AdminOrdersPage() {
             <div className="space-y-4">
                 {ordersByStatus[col.status].length > 0 ? (
                     ordersByStatus[col.status].map(order => (
-                        <OrderCard key={order.id} order={order} />
+                        <OrderCard key={order.id} order={order} onAdvance={handleAdvanceState} />
                     ))
                 ) : (
                     <p className='text-sm text-center text-muted-foreground pt-4'>No hay pedidos en este estado.</p>

@@ -105,6 +105,9 @@ export default function AdminProductsPage() {
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
 
   const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
@@ -121,18 +124,25 @@ export default function AdminProductsPage() {
     });
   }, [products, searchTerm, categoryFilter]);
 
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = useMemo(() => {
+    return filteredProducts.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+  }, [filteredProducts, currentPage]);
+
+
   return (
     <div className="space-y-8">
         <div className="flex items-center justify-between gap-4 flex-wrap">
             <h1 className="text-3xl font-bold font-headline">Gestión de Productos</h1>
-            <div className="flex gap-2 items-center">
-              <ProductForm>
-                <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Añadir Producto
-                </Button>
-              </ProductForm>
-            </div>
+            <ProductForm>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Producto
+              </Button>
+            </ProductForm>
         </div>
 
         <Card>
@@ -147,10 +157,16 @@ export default function AdminProductsPage() {
                   placeholder="Buscar por nombre..."
                   className="pl-10"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <Select value={categoryFilter} onValueChange={(value) => {
+                setCategoryFilter(value)
+                setCurrentPage(1);
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder={isLoadingCategories ? "Cargando..." : "Filtrar por categoría"} />
                 </SelectTrigger>
@@ -187,14 +203,14 @@ export default function AdminProductsPage() {
                 <TableCell colSpan={6} className="text-center h-24">Cargando productos...</TableCell>
               </TableRow>
             )}
-            {!(isLoadingProducts || isLoadingCategories) && filteredProducts.length === 0 && (
+            {!(isLoadingProducts || isLoadingCategories) && paginatedProducts.length === 0 && (
                 <TableRow>
                     <TableCell colSpan={6} className="text-center h-24">
                       {products && products.length > 0 ? "No se encontraron productos con los filtros aplicados." : "No hay productos. ¡Añade uno nuevo!"}
                     </TableCell>
                 </TableRow>
             )}
-            {filteredProducts?.map((product) => (
+            {paginatedProducts?.map((product) => (
               <TableRow key={product.id}>
                  <TableCell className="hidden sm:table-cell">
                     {product.imageUrl ? (
@@ -241,6 +257,31 @@ export default function AdminProductsPage() {
           </TableBody>
         </Table>
        </div>
+       {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+                <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                >
+                    Anterior
+                </Button>
+                <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                >
+                    Siguiente
+                </Button>
+            </div>
+        </div>
+       )}
     </div>
   );
 }

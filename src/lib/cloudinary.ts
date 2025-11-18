@@ -6,10 +6,11 @@ import { v2 as cloudinary } from 'cloudinary';
 const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
 const apiKey = process.env.CLOUDINARY_API_KEY;
 const apiSecret = process.env.CLOUDINARY_API_SECRET;
+const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
 
 // Verificar que las variables están presentes
-if (!cloudName || !apiKey || !apiSecret) {
-  throw new Error('Cloudinary environment variables are missing. Make sure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are set in your .env file.');
+if (!cloudName || !apiKey || !apiSecret || !uploadPreset) {
+  throw new Error('Cloudinary environment variables are missing. Make sure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, and CLOUDINARY_UPLOAD_PRESET are set in your .env file.');
 }
 
 // Configurar Cloudinary con las variables obtenidas
@@ -35,8 +36,7 @@ export async function uploadImage(formData: FormData) {
     const result: any = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
-          tags: ['la-perrada-de-william'],
-          upload_preset: undefined, // Not using presets for signed uploads
+          upload_preset: uploadPreset, // Usar el upload_preset
         },
         (error, result) => {
           if (error) {

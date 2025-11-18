@@ -99,6 +99,7 @@ function SeedDatabaseButton() {
   const handleSeed = async () => {
     if (!firestore) return;
     setIsLoading(true);
+    setIsAlertOpen(false);
 
     try {
       const batch = writeBatch(firestore);
@@ -129,7 +130,7 @@ function SeedDatabaseButton() {
           ...product,
           price: product.price || 0,
           description: `Un delicioso ${product.name}`,
-          imageUrl: product.imageUrl || "",
+          imageUrl: "", // Ensure imageUrl is always an empty string
           imageHint: product.imageHint || product.name,
           category: categoryMap[product.category] || product.category
         });
@@ -151,7 +152,6 @@ function SeedDatabaseButton() {
       console.error("Error seeding database: ", error);
     } finally {
       setIsLoading(false);
-      setIsAlertOpen(false);
     }
   }
 
@@ -167,7 +167,7 @@ function SeedDatabaseButton() {
         <AlertDialogHeader>
           <AlertDialogTitle>¿Reemplazar el menú actual?</AlertDialogTitle>
           <AlertDialogDescription>
-            ¡Atención! Esta acción eliminará todos los productos y categorías existentes y los reemplazará con los del archivo de muestra.
+            ¡Atención! Esta acción eliminará todos los productos y categorías existentes y los reemplazará con los del archivo de muestra. Esta acción es irreversible.
             ¿Deseas continuar?
           </AlertDialogDescription>
         </AlertDialogHeader>

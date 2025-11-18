@@ -130,7 +130,7 @@ function SeedDatabaseButton() {
           ...product,
           price: product.price || 0,
           description: `Un delicioso ${product.name}`,
-          imageUrl: "", // Ensure imageUrl is always an empty string
+          imageUrl: "", 
           imageHint: product.imageHint || product.name,
           category: categoryMap[product.category] || product.category
         });
@@ -139,15 +139,15 @@ function SeedDatabaseButton() {
       await batch.commit();
 
       toast({
-        title: '¡Menú cargado!',
-        description: 'Todos los productos y categorías han sido añadidos a la base de datos.'
+        title: '¡Base de datos reiniciada!',
+        description: 'Todos los productos y categorías han sido eliminados y reemplazados con los datos de muestra.'
       });
 
     } catch (error) {
       toast({
         variant: "destructive",
-        title: 'Error al cargar el menú',
-        description: 'No se pudieron añadir los productos. Revisa la consola para más detalles.',
+        title: 'Error al reiniciar la base de datos',
+        description: 'No se pudieron procesar los cambios. Revisa la consola para más detalles.',
       });
       console.error("Error seeding database: ", error);
     } finally {
@@ -165,16 +165,16 @@ function SeedDatabaseButton() {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Reemplazar el menú actual?</AlertDialogTitle>
+          <AlertDialogTitle>¿Reiniciar la base de datos?</AlertDialogTitle>
           <AlertDialogDescription>
-            ¡Atención! Esta acción eliminará todos los productos y categorías existentes y los reemplazará con los del archivo de muestra. Esta acción es irreversible.
+            ¡Atención! Esta acción eliminará TODOS los productos y categorías existentes en la base de datos y los reemplazará con los del archivo de muestra. Es ideal para empezar de cero.
             ¿Deseas continuar?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={handleSeed}>
-            Sí, reemplazar menú
+            Sí, reiniciar y cargar
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

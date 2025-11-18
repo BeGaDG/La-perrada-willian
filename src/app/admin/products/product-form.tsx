@@ -26,7 +26,7 @@ const productSchema = z.object({
 });
 
 
-function ImageUploader({ value, onValueChange }: { value: string; onValueChange: (value: string) => void }) {
+function ImageUploader({ value, onValueChange, error }: { value: string; onValueChange: (value: string) => void, error?: string }) {
     const [isUploading, setIsUploading] = useState(false);
     const { toast } = useToast();
 
@@ -79,50 +79,49 @@ function ImageUploader({ value, onValueChange }: { value: string; onValueChange:
     }
     
     return (
-        <div className="grid grid-cols-4 items-start gap-4">
-            <Label className="text-right pt-2">Imagen</Label>
-            <div className="col-span-3">
-                {value ? (
-                    <div className="relative">
-                        <Image src={value} alt="Preview" width={100} height={100} className="rounded-md border aspect-video object-cover" />
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                            onClick={() => onValueChange('')}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                ) : (
-                    <div 
-                        className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted"
-                        onDrop={onDrop}
-                        onDragOver={onDragOver}
+        <div className="space-y-2">
+            <Label htmlFor="file-upload">Imagen</Label>
+            {value ? (
+                <div className="relative w-fit">
+                    <Image src={value} alt="Preview" width={128} height={128} className="rounded-md border aspect-video object-cover" />
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={() => onValueChange('')}
                     >
-                        {isUploading ? (
-                            <>
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <p className="text-sm text-muted-foreground mt-2">Subiendo...</p>
-                            </>
-                        ) : (
-                            <>
-                                <UploadCloud className="h-8 w-8 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground mt-2">Arrastra o haz clic para subir</p>
-                                <Input 
-                                    id="file-upload" 
-                                    type="file" 
-                                    className="absolute w-full h-full opacity-0 cursor-pointer"
-                                    onChange={handleFileChange} 
-                                    accept="image/*"
-                                    disabled={isUploading}
-                                />
-                            </>
-                        )}
-                    </div>
-                )}
-            </div>
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            ) : (
+                <div 
+                    className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted"
+                    onDrop={onDrop}
+                    onDragOver={onDragOver}
+                >
+                    {isUploading ? (
+                        <>
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="text-sm text-muted-foreground mt-2">Subiendo...</p>
+                        </>
+                    ) : (
+                        <>
+                            <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground mt-2">Arrastra o haz clic para subir</p>
+                            <Input 
+                                id="file-upload" 
+                                type="file" 
+                                className="absolute w-full h-full opacity-0 cursor-pointer"
+                                onChange={handleFileChange} 
+                                accept="image/*"
+                                disabled={isUploading}
+                            />
+                        </>
+                    )}
+                </div>
+            )}
+            {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
     );
 }
@@ -211,49 +210,51 @@ export function ProductForm({ children, productToEdit }: { children: React.React
             }
         }}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{productToEdit ? 'Editar Producto' : 'Añadir Producto'}</DialogTitle>
                     <DialogDescription>
-                        {productToEdit ? 'Actualiza los detalles del producto.' : 'Añade un nuevo producto al menú. Sube una imagen desde tu dispositivo.'}
+                        {productToEdit ? 'Actualiza los detalles del producto.' : 'Añade un nuevo producto al menú.'}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
                     {productToEdit && <input type="hidden" name="id" value={productToEdit.id} />}
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">Nombre <span className="text-destructive">*</span></Label>
-                            <Input id="name" name="name" defaultValue={productToEdit?.name} className="col-span-3" />
-                            {errors?.name && <p className="col-span-4 text-xs text-destructive text-right">{errors.name[0]}</p>}
+                    <div className="grid gap-6 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Nombre <span className="text-destructive">*</span></Label>
+                            <Input id="name" name="name" defaultValue={productToEdit?.name} />
+                            {errors?.name && <p className="text-xs text-destructive">{errors.name[0]}</p>}
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="description" className="text-right">Descripción</Label>
-                            <Textarea id="description" name="description" defaultValue={productToEdit?.description} className="col-span-3" />
-                             {errors?.description && <p className="col-span-4 text-xs text-destructive text-right">{errors.description[0]}</p>}
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Descripción</Label>
+                            <Textarea id="description" name="description" defaultValue={productToEdit?.description} />
+                             {errors?.description && <p className="text-xs text-destructive">{errors.description[0]}</p>}
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="price" className="text-right">Precio <span className="text-destructive">*</span></Label>
-                            <Input id="price" name="price" type="number" step="1" defaultValue={productToEdit?.price} className="col-span-3" />
-                             {errors?.price && <p className="col-span-4 text-xs text-destructive text-right">{errors.price[0]}</p>}
+                        <div className="grid grid-cols-2 gap-4">
+                           <div className="space-y-2">
+                                <Label htmlFor="price">Precio <span className="text-destructive">*</span></Label>
+                                <Input id="price" name="price" type="number" step="1" defaultValue={productToEdit?.price} />
+                                 {errors?.price && <p className="text-xs text-destructive">{errors.price[0]}</p>}
+                            </div>
+                           <div className="space-y-2">
+                                <Label htmlFor="category">Categoría <span className="text-destructive">*</span></Label>
+                                 <Select name="category" defaultValue={productToEdit?.category}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={isLoadingCategories ? "Cargando..." : "Selecciona"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories?.map(category => (
+                                            <SelectItem key={category.id} value={category.name}>
+                                                {category.name}
+                                            </sbin>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors?.category && <p className="text-xs text-destructive">{errors.category[0]}</p>}
+                            </div>
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="category" className="text-right">Categoría <span className="text-destructive">*</span></Label>
-                             <Select name="category" defaultValue={productToEdit?.category}>
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder={isLoadingCategories ? "Cargando..." : "Selecciona una categoría"} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories?.map(category => (
-                                        <SelectItem key={category.id} value={category.name}>
-                                            {category.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors?.category && <p className="col-span-4 text-xs text-destructive text-right">{errors.category[0]}</p>}
-                        </div>
-                        <ImageUploader value={imageUrl} onValueChange={setImageUrl} />
-                         {errors?.imageUrl && <p className="col-span-4 text-xs text-destructive text-right -mt-2">{errors.imageUrl[0]}</p>}
+
+                        <ImageUploader value={imageUrl} onValueChange={setImageUrl} error={errors?.imageUrl?.[0]} />
                     </div>
                     <DialogFooter>
                          <Button type="submit" disabled={isPending}>{isPending ? "Guardando..." : "Guardar Cambios"}</Button>

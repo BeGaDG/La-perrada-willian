@@ -9,10 +9,13 @@ import { Menu, Flame, GlassWater, Drumstick } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 const categoryIcons: Record<string, LucideIcon> = {
-  'Perros Calientes': Flame,
-  'Hamburguesas': Menu,
-  'Bebidas': GlassWater,
-  'Otros': Drumstick,
+  'PERROS': Flame,
+  'HAMBURGUESAS': Menu,
+  'BEBIDAS': GlassWater,
+  'SUIZOS': Drumstick,
+  'MINI SUIZOS': Drumstick,
+  'PIZZAS': Drumstick,
+  'ADICIONALES': Drumstick,
 };
 
 export default function Home() {

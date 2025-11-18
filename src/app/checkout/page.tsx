@@ -120,7 +120,7 @@ export default function CheckoutPage() {
                         {items.map(item => (
                              <div key={item.product.id} className="flex justify-between items-center">
                                 <div className="flex items-center gap-4">
-                                    <Image src={item.product.imageUrl} alt={item.product.name} width={48} height={48} className="rounded-md aspect-square object-cover" data-ai-hint={item.product.imageHint} />
+                                    <Image src={item.product.imageUrl || `https://placehold.co/64x64/E2E8F0/A0AEC0?text=Sin+Imagen`} alt={item.product.name} width={48} height={48} className="rounded-md aspect-square object-cover" data-ai-hint={item.product.imageHint} />
                                     <div>
                                         <p className="font-semibold">{item.product.name}</p>
                                         <p className="text-sm text-muted-foreground">{item.quantity} x {formatPrice(item.product.price)}</p>

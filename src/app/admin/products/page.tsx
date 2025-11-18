@@ -130,8 +130,8 @@ function SeedDatabaseButton() {
           ...product,
           price: product.price || 0,
           description: `Un delicioso ${product.name}`,
-          imageUrl: `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`,
-          imageHint: product.category.toLowerCase(),
+          imageUrl: product.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`,
+          imageHint: product.imageHint,
           category: categoryMap[product.category] || product.category
         });
       });
@@ -245,7 +245,7 @@ export default function AdminProductsPage() {
                     alt={product.name}
                     className="aspect-square rounded-md object-cover"
                     height="64"
-                    src={product.imageUrl}
+                    src={product.imageUrl || `https://placehold.co/64x64/E2E8F0/A0AEC0?text=Sin+Imagen`}
                     width="64"
                     data-ai-hint={product.imageHint}
                   />

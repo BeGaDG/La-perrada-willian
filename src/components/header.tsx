@@ -20,6 +20,8 @@ export function Header() {
   const { totalItems } = useCart();
   const pathname = usePathname();
 
+  const isAdminPage = pathname.startsWith('/admin');
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
@@ -40,15 +42,17 @@ export function Header() {
             ))}
           </nav>
           <div className="flex items-center ml-auto md:ml-6">
-            <Button variant="ghost" className="relative" onClick={() => setIsCartOpen(true)}>
-              <ShoppingCart className="h-5 w-5" />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                  {totalItems}
-                </span>
-              )}
-              <span className="sr-only">Ver carrito</span>
-            </Button>
+            {!isAdminPage && (
+              <Button variant="ghost" className="relative" onClick={() => setIsCartOpen(true)}>
+                <ShoppingCart className="h-5 w-5" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    {totalItems}
+                  </span>
+                )}
+                <span className="sr-only">Ver carrito</span>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -81,7 +85,7 @@ export function Header() {
           </div>
         )}
       </header>
-      <CartSheet open={isCartOpen} onOpenChange={setIsCartOpen} />
+      {!isAdminPage && <CartSheet open={isCartOpen} onOpenChange={setIsCartOpen} />}
     </>
   );
 }

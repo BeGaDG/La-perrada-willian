@@ -1,22 +1,22 @@
 'use server';
 
 import { v2 as cloudinary } from 'cloudinary';
-import { getConfig } from 'next/config';
 
-// Obtener las variables de configuración del servidor
-const { serverRuntimeConfig } = getConfig();
-const { cloudinaryCloudName, cloudinaryApiKey, cloudinaryApiSecret } = serverRuntimeConfig;
+// Lee las variables de entorno directamente del proceso del servidor
+const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+const apiKey = process.env.CLOUDINARY_API_KEY;
+const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
 // Verificar que las variables están presentes
-if (!cloudinaryCloudName || !cloudinaryApiKey || !cloudinaryApiSecret) {
-  throw new Error('Cloudinary configuration is missing in next.config.js');
+if (!cloudName || !apiKey || !apiSecret) {
+  throw new Error('Cloudinary environment variables are missing. Make sure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are set in your .env file.');
 }
 
 // Configurar Cloudinary con las variables obtenidas
 cloudinary.config({ 
-  cloud_name: cloudinaryCloudName, 
-  api_key: cloudinaryApiKey, 
-  api_secret: cloudinaryApiSecret,
+  cloud_name: cloudName, 
+  api_key: apiKey, 
+  api_secret: apiSecret,
   secure: true
 });
 

@@ -1,5 +1,4 @@
 import type {NextConfig} from 'next';
-require('dotenv').config({ path: './.env' });
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -18,12 +17,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       }
     ],
-  },
-  serverRuntimeConfig: {
-    // Variables that will only be available on the server side
-    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
-    cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
   },
 };
 

@@ -11,6 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 
 const kanbanColumns: { title: string; status: OrderStatus }[] = [
   { title: 'Nuevos Pedidos', status: 'PENDIENTE_PAGO' },
@@ -83,23 +85,47 @@ function PrintTicketDialog({ order }: { order: Order }) {
 
 
 function OrderCard({ order, onAdvance }: { order: Order, onAdvance: (orderId: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
   return (
+    <Collapsible asChild>
     <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium flex justify-between">
-            <span>Pedido #{order.id.substring(0,5)}...</span>
-            <Badge variant={order.paymentMethod === 'EFECTIVO' ? 'secondary' : 'outline' }>{order.paymentMethod}</Badge>
-        </CardTitle>
+      <CardHeader className="p-4">
+        <CollapsibleTrigger className='w-full'>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-sm font-medium text-left">
+                Pedido #{order.id.substring(0,5)}...
+                <p className="font-normal">{order.customerName}</p>
+            </CardTitle>
+            <div className='flex items-center gap-2'>
+                <Badge variant={order.paymentMethod === 'EFECTIVO' ? 'secondary' : 'outline' }>{order.paymentMethod}</Badge>
+                <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
+          </div>
+        </CollapsibleTrigger>
       </CardHeader>
-      <CardContent className="text-sm">
-        <p>{order.customerName}</p>
-        <Separator className='my-2'/>
-        <div className='flex justify-between font-semibold'>
-            <span>Total:</span>
-            <span>{formatPrice(order.totalAmount)}</span>
-        </div>
-      </CardContent>
-      <CardFooter className="flex flex-col gap-2">
+      <CollapsibleContent>
+        <CardContent className="text-sm px-4 pb-4 space-y-2">
+            <Separator/>
+            <div className='pt-2'>
+                <p><span className='font-semibold'>Dirección:</span> {order.customerAddress}</p>
+                <p><span className='font-semibold'>Teléfono:</span> {order.customerPhone}</p>
+            </div>
+            <Separator/>
+             <div className='space-y-1'>
+                <p className='font-semibold'>Productos:</p>
+                {order.items.map((item, index) => (
+                    <p key={index} className='text-muted-foreground'>- {item.quantity}x {item.productName}</p>
+                ))}
+            </div>
+            <Separator/>
+            <div className='flex justify-between font-bold pt-1'>
+                <span>Total:</span>
+                <span>{formatPrice(order.totalAmount)}</span>
+            </div>
+        </CardContent>
+      </CollapsibleContent>
+      <CardFooter className="flex flex-col gap-2 p-4 pt-0">
          {nextStatus[order.status] && (
             <Button onClick={() => onAdvance(order.id)} className="w-full whitespace-normal h-auto">
                 {getActionLabel(order.status)}
@@ -108,6 +134,7 @@ function OrderCard({ order, onAdvance }: { order: Order, onAdvance: (orderId: st
          <PrintTicketDialog order={order} />
       </CardFooter>
     </Card>
+     </Collapsible>
   );
 }
 

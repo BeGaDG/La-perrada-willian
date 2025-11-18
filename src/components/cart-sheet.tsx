@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/com
 import { useCart } from "@/components/cart-provider";
 import Image from "next/image";
 import { ScrollArea } from "./ui/scroll-area";
-import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { Minus, Plus, ShoppingCart, Trash2, ImageIcon } from "lucide-react";
 import { Separator } from "./ui/separator";
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -40,14 +40,20 @@ export function CartSheet({ open, onOpenChange }: { open: boolean, onOpenChange:
               <div className="flex flex-col gap-6">
                 {items.map(item => (
                   <div key={item.product.id} className="flex items-start gap-4">
-                    <Image 
-                      src={item.product.imageUrl || `https://placehold.co/64x64/E2E8F0/A0AEC0?text=Sin+Imagen`} 
-                      alt={item.product.name} 
-                      width={64} 
-                      height={64} 
-                      className="rounded-md aspect-square object-cover"
-                      data-ai-hint={item.product.imageHint}
-                    />
+                    {item.product.imageUrl ? (
+                        <Image 
+                            src={item.product.imageUrl} 
+                            alt={item.product.name} 
+                            width={64} 
+                            height={64} 
+                            className="rounded-md aspect-square object-cover"
+                            data-ai-hint={item.product.imageHint}
+                        />
+                    ) : (
+                        <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                    )}
                     <div className="flex-grow">
                       <p className="font-semibold">{item.product.name}</p>
                       <p className="text-sm text-muted-foreground">{formatPrice(item.product.price)}</p>

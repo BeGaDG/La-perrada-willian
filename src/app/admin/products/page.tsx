@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PlusCircle, Upload } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Upload, ImageIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +33,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
 import menuData from '@/lib/menu-data.json';
@@ -130,7 +129,7 @@ function SeedDatabaseButton() {
           ...product,
           price: product.price || 0,
           description: `Un delicioso ${product.name}`,
-          imageUrl: product.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`,
+          imageUrl: product.imageUrl || "",
           imageHint: product.imageHint || product.name,
           category: categoryMap[product.category] || product.category
         });
@@ -241,14 +240,20 @@ export default function AdminProductsPage() {
             {products?.map((product) => (
               <TableRow key={product.id}>
                  <TableCell className="hidden sm:table-cell">
-                  <Image
-                    alt={product.name}
-                    className="aspect-square rounded-md object-cover"
-                    height="64"
-                    src={product.imageUrl || `https://placehold.co/64x64/E2E8F0/A0AEC0?text=Sin+Imagen`}
-                    width="64"
-                    data-ai-hint={product.imageHint}
-                  />
+                    {product.imageUrl ? (
+                        <Image
+                            alt={product.name}
+                            className="aspect-square rounded-md object-cover"
+                            height="64"
+                            src={product.imageUrl}
+                            width="64"
+                            data-ai-hint={product.imageHint}
+                        />
+                    ) : (
+                        <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                    )}
                 </TableCell>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>

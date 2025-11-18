@@ -80,7 +80,7 @@ export function ProductForm({ children, productToEdit }: { children: React.React
             const storage = getStorage();
 
             try {
-                let imageUrl = productToEdit?.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`;
+                let imageUrl = productToEdit?.imageUrl || "";
 
                 if (imageFile) {
                     const storageRef = ref(storage, `product-images/${Date.now()}_${imageFile.name}`);
@@ -189,5 +189,3 @@ export function ProductForm({ children, productToEdit }: { children: React.React
         </Dialog>
     );
 }
-
-    

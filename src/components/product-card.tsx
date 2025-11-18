@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, ImageIcon } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { useCart } from '@/components/cart-provider';
 import { useToast } from '@/hooks/use-toast';
@@ -33,15 +33,19 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
       <CardHeader className="p-0">
-        <div className="aspect-[3/2] relative">
-          <Image
-            src={product.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            data-ai-hint={product.imageHint}
-          />
+        <div className="aspect-[3/2] relative bg-muted flex items-center justify-center">
+          {product.imageUrl ? (
+            <Image
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                data-ai-hint={product.imageHint}
+            />
+          ) : (
+            <ImageIcon className="h-16 w-16 text-muted-foreground" />
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-grow">

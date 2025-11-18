@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { createOrder } from "@/lib/actions";
+import { ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -120,7 +121,13 @@ export default function CheckoutPage() {
                         {items.map(item => (
                              <div key={item.product.id} className="flex justify-between items-center">
                                 <div className="flex items-center gap-4">
-                                    <Image src={item.product.imageUrl || `https://placehold.co/64x64/E2E8F0/A0AEC0?text=Sin+Imagen`} alt={item.product.name} width={48} height={48} className="rounded-md aspect-square object-cover" data-ai-hint={item.product.imageHint || ''} />
+                                     {item.product.imageUrl ? (
+                                        <Image src={item.product.imageUrl} alt={item.product.name} width={48} height={48} className="rounded-md aspect-square object-cover" data-ai-hint={item.product.imageHint || ''} />
+                                     ) : (
+                                        <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
+                                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                        </div>
+                                     )}
                                     <div>
                                         <p className="font-semibold">{item.product.name}</p>
                                         <p className="text-sm text-muted-foreground">{item.quantity} x {formatPrice(item.product.price)}</p>

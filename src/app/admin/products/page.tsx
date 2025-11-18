@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from "react";
-import { collection } from "firebase/firestore";
+import { collection, doc, deleteDoc } from "firebase/firestore";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import {
   Table,
@@ -24,7 +24,6 @@ import {
 import Image from "next/image";
 import { ProductForm } from "./product-form";
 import type { Product } from "@/lib/types";
-import { deleteProduct } from "./product-actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,10 +35,34 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast";
+import { revalidatePath } from "next/cache";
 
 function DeleteProductDialog({ productId }: { productId: string }) {
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
   const handleDelete = async () => {
-    await deleteProduct(productId);
+    if (!firestore) return;
+    try {
+      const productRef = doc(firestore, 'products', productId);
+      await deleteDoc(productRef);
+      toast({
+        title: 'Producto eliminado',
+        description: 'El producto ha sido eliminado con éxito.'
+      });
+      // This won't work on the client, but for now we leave it
+      // to avoid breaking changes if it were to run on the server.
+      // revalidatePath('/admin/products');
+      // revalidatePath('/');
+    } catch (error) {
+       toast({
+        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudo eliminar el producto.',
+      });
+      console.error("Error deleting product: ", error);
+    }
   };
 
   return (
@@ -70,7 +93,7 @@ function DeleteProductDialog({ productId }: { productId: string }) {
 
 export default function AdminProductsPage() {
   const firestore = useFirestore();
-  const productsRef = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
+  const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products, isLoading } = useCollection<Product>(productsRef);
 
   return (

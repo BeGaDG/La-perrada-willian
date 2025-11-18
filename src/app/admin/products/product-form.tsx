@@ -1,44 +1,85 @@
 'use client';
 
-import React, { useEffect, useState, useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import React, { useEffect, useState, useTransition } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { saveProduct, type FormState } from './product-actions';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { z } from 'zod';
 
-const initialState: FormState = { message: '', success: false };
+const productSchema = z.object({
+  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
+  description: z.string().min(10, "La descripción debe tener al menos 10 caracteres."),
+  price: z.coerce.number().min(0, "El precio no puede ser negativo."),
+  category: z.enum(['Perros Calientes', 'Hamburguesas', 'Bebidas', 'Otros'], { required_error: "La categoría es obligatoria."}),
+});
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return <Button type="submit" disabled={pending}>{pending ? "Guardando..." : "Guardar Cambios"}</Button>;
-}
 
 export function ProductForm({ children, productToEdit }: { children: React.ReactNode, productToEdit?: Product }) {
     const [open, setOpen] = useState(false);
-    const [state, formAction] = useActionState(saveProduct, initialState);
     const { toast } = useToast();
+    const firestore = useFirestore();
+    const [isPending, startTransition] = useTransition();
+    const [errors, setErrors] = useState<Record<string, string[] | undefined> | null>(null);
 
-    useEffect(() => {
-        if (state.success) {
-            toast({
-                title: "¡Éxito!",
-                description: state.message,
-            });
-            setOpen(false);
-        } else if (state.message && state.errors) {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setErrors(null);
+        const formData = new FormData(event.currentTarget);
+        const rawData = Object.fromEntries(formData.entries());
+
+        const validatedFields = productSchema.safeParse(rawData);
+        if (!validatedFields.success) {
+            setErrors(validatedFields.error.flatten().fieldErrors);
             toast({
                 variant: 'destructive',
                 title: 'Error en el formulario',
-                description: state.message,
+                description: 'Por favor, corrige los errores.',
             });
+            return;
         }
-    }, [state, toast]);
+        
+        const { ...data } = validatedFields.data;
+        const id = formData.get('id') as string | null;
+
+        startTransition(async () => {
+            if (!firestore) return;
+
+            try {
+                if (id) {
+                    const productRef = doc(firestore, 'products', id);
+                    await updateDoc(productRef, data);
+                } else {
+                    const productsCollection = collection(firestore, 'products');
+                    const newProduct = {
+                        ...data,
+                        imageUrl: 'https://picsum.photos/seed/newproduct/600/400',
+                        imageHint: 'food placeholder'
+                    };
+                    await addDoc(productsCollection, newProduct);
+                }
+
+                toast({
+                    title: '¡Éxito!',
+                    description: 'Producto guardado con éxito.',
+                });
+                setOpen(false);
+            } catch (e) {
+                console.error("Error saving product:", e);
+                toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: 'No se pudo guardar el producto.',
+                });
+            }
+        });
+    }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -50,23 +91,23 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                         {productToEdit ? 'Actualiza los detalles del producto.' : 'Añade un nuevo producto al menú.'}
                     </DialogDescription>
                 </DialogHeader>
-                <form action={formAction}>
-                    <input type="hidden" name="id" value={productToEdit?.id} />
+                <form onSubmit={handleSubmit}>
+                    {productToEdit && <input type="hidden" name="id" value={productToEdit.id} />}
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="name" className="text-right">Nombre</Label>
                             <Input id="name" name="name" defaultValue={productToEdit?.name} className="col-span-3" />
-                            {state?.errors?.name && <p className="col-span-4 text-xs text-destructive text-right">{state.errors.name[0]}</p>}
+                            {errors?.name && <p className="col-span-4 text-xs text-destructive text-right">{errors.name[0]}</p>}
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="description" className="text-right">Descripción</Label>
                             <Textarea id="description" name="description" defaultValue={productToEdit?.description} className="col-span-3" />
-                             {state?.errors?.description && <p className="col-span-4 text-xs text-destructive text-right">{state.errors.description[0]}</p>}
+                             {errors?.description && <p className="col-span-4 text-xs text-destructive text-right">{errors.description[0]}</p>}
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="price" className="text-right">Precio</Label>
                             <Input id="price" name="price" type="number" step="0.01" defaultValue={productToEdit?.price} className="col-span-3" />
-                             {state?.errors?.price && <p className="col-span-4 text-xs text-destructive text-right">{state.errors.price[0]}</p>}
+                             {errors?.price && <p className="col-span-4 text-xs text-destructive text-right">{errors.price[0]}</p>}
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="category" className="text-right">Categoría</Label>
@@ -81,11 +122,11 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                                     <SelectItem value="Otros">Otros</SelectItem>
                                 </SelectContent>
                             </Select>
-                            {state?.errors?.category && <p className="col-span-4 text-xs text-destructive text-right">{state.errors.category[0]}</p>}
+                            {errors?.category && <p className="col-span-4 text-xs text-destructive text-right">{errors.category[0]}</p>}
                         </div>
                     </div>
                     <DialogFooter>
-                        <SubmitButton />
+                         <Button type="submit" disabled={isPending}>{isPending ? "Guardando..." : "Guardar Cambios"}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

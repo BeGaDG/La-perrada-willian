@@ -165,7 +165,6 @@ function SeedDatabaseButton() {
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
-    </AlertDialog>
   );
 }
 

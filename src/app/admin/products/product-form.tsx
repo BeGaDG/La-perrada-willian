@@ -18,6 +18,7 @@ const productSchema = z.object({
   description: z.string().min(10, "La descripción debe tener al menos 10 caracteres."),
   price: z.coerce.number().min(0, "El precio no puede ser negativo."),
   category: z.string().min(1, "La categoría es obligatoria."),
+  imageUrl: z.string().url("Debe ser una URL válida.").optional().or(z.literal('')),
 });
 
 
@@ -51,18 +52,23 @@ export function ProductForm({ children, productToEdit }: { children: React.React
         const { ...data } = validatedFields.data;
         const id = formData.get('id') as string | null;
 
+        const finalImageUrl = data.imageUrl || `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Sin+Imagen`;
+
         startTransition(async () => {
             if (!firestore) return;
 
             try {
                 if (id) {
                     const productRef = doc(firestore, 'products', id);
-                    await updateDoc(productRef, data);
+                    await updateDoc(productRef, {
+                        ...data,
+                        imageUrl: finalImageUrl,
+                    });
                 } else {
                     const productsCollection = collection(firestore, 'products');
                     const newProduct = {
                         ...data,
-                        imageUrl: `https://picsum.photos/seed/${data.name.replace(/\s/g, '')}/600/400`,
+                        imageUrl: finalImageUrl,
                         imageHint: data.category.toLowerCase()
                     };
                     await addDoc(productsCollection, newProduct);
@@ -127,6 +133,11 @@ export function ProductForm({ children, productToEdit }: { children: React.React
                                 </SelectContent>
                             </Select>
                             {errors?.category && <p className="col-span-4 text-xs text-destructive text-right">{errors.category[0]}</p>}
+                        </div>
+                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="imageUrl" className="text-right">URL de Imagen</Label>
+                            <Input id="imageUrl" name="imageUrl" defaultValue={productToEdit?.imageUrl.startsWith('https://placehold.co') ? '' : productToEdit?.imageUrl} className="col-span-3" placeholder="Opcional" />
+                            {errors?.imageUrl && <p className="col-span-4 text-xs text-destructive text-right">{errors.imageUrl[0]}</p>}
                         </div>
                     </div>
                     <DialogFooter>

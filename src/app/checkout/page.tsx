@@ -9,10 +9,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { createOrder } from "@/lib/actions";
-import { ImageIcon } from "lucide-react";
+import { ChevronDown, ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
+
 
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -25,39 +28,67 @@ const formatPrice = (price: number) => {
 
 function OrderSummary() {
     const { items, totalPrice, totalItems } = useCart();
+    const [isOpen, setIsOpen] = React.useState(false);
+
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Resumen del Pedido</CardTitle>
-                <CardDescription>Tienes {totalItems} {totalItems === 1 ? 'producto' : 'productos'} en tu carrito.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {items.map(item => (
-                     <div key={item.product.id} className="flex justify-between items-center">
-                        <div className="flex items-center gap-4">
-                             {item.product.imageUrl ? (
-                                <Image src={item.product.imageUrl} alt={item.product.name} width={48} height={48} className="rounded-md aspect-square object-cover" data-ai-hint={item.product.imageHint || ''} />
-                             ) : (
-                                <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
-                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                </div>
-                             )}
-                            <div>
-                                <p className="font-semibold">{item.product.name}</p>
-                                <p className="text-sm text-muted-foreground">{item.quantity} x {formatPrice(item.product.price)}</p>
-                            </div>
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+            <Card>
+                <CardHeader>
+                    <CollapsibleTrigger className="flex justify-between items-center w-full">
+                        <div>
+                            <CardTitle className="text-left">Resumen del Pedido</CardTitle>
+                            <CardDescription className="text-left">
+                                {totalItems} {totalItems === 1 ? 'producto' : 'productos'} en tu carrito.
+                            </CardDescription>
                         </div>
-                        <p className="font-semibold">{formatPrice(item.quantity * item.product.price)}</p>
-                    </div>
-                ))}
-                 <Separator />
-                <div className="flex justify-between font-bold text-lg">
-                    <span>Total</span>
-                    <span>{formatPrice(totalPrice)}</span>
-                </div>
-            </CardContent>
-        </Card>
+                        <div className="flex items-center gap-4">
+                             <span className="font-bold text-lg whitespace-nowrap lg:hidden">
+                                {formatPrice(totalPrice)}
+                            </span>
+                            <ChevronDown className={cn("h-5 w-5 transition-transform", isOpen && "rotate-180")} />
+                        </div>
+                    </CollapsibleTrigger>
+                </CardHeader>
+
+                <CollapsibleContent>
+                    <CardContent className="space-y-4">
+                        {items.map(item => (
+                            <div key={item.product.id} className="flex justify-between items-center">
+                                <div className="flex items-center gap-4">
+                                    {item.product.imageUrl ? (
+                                        <Image src={item.product.imageUrl} alt={item.product.name} width={48} height={48} className="rounded-md aspect-square object-cover" data-ai-hint={item.product.imageHint || ''} />
+                                    ) : (
+                                        <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
+                                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="font-semibold">{item.product.name}</p>
+                                        <p className="text-sm text-muted-foreground">{item.quantity} x {formatPrice(item.product.price)}</p>
+                                    </div>
+                                </div>
+                                <p className="font-semibold">{formatPrice(item.quantity * item.product.price)}</p>
+                            </div>
+                        ))}
+                        <Separator />
+                        <div className="flex justify-between font-bold text-lg">
+                            <span>Total</span>
+                            <span>{formatPrice(totalPrice)}</span>
+                        </div>
+                    </CardContent>
+                </CollapsibleContent>
+                 <div className="hidden lg:block">
+                     <Separator />
+                     <CardFooter className="pt-6">
+                        <div className="flex justify-between font-bold text-lg w-full">
+                            <span>Total</span>
+                            <span>{formatPrice(totalPrice)}</span>
+                        </div>
+                     </CardFooter>
+                 </div>
+            </Card>
+        </Collapsible>
     );
 }
 
@@ -120,7 +151,7 @@ export default function CheckoutPage() {
         <div className="container py-12 md:py-16">
             <h1 className="text-3xl font-bold mb-8 font-headline text-center">Finalizar Compra</h1>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 relative">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 relative pb-24 lg:pb-0">
                 
                 {/* Columna Izquierda: Resumen en móvil y Formulario en desktop */}
                 <div className="lg:hidden">

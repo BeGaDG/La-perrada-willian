@@ -1,7 +1,6 @@
 
 import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
-import { Readable } from 'stream';
 
 // Configure Cloudinary using environment variables
 cloudinary.config({ 
@@ -26,30 +25,20 @@ export async function POST(request: Request) {
     }
 
     const fileBuffer = await buffer(file);
+    
+    // Convert buffer to data URI
+    const dataUri = `data:${file.type};base64,${fileBuffer.toString('base64')}`;
 
-    const imageUrl = await new Promise<string>((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-            { resource_type: 'image' },
-            (error, result) => {
-                if (error) {
-                    console.error('Cloudinary upload error:', error);
-                    return reject(new Error('Failed to upload image.'));
-                }
-                if (!result) {
-                    return reject(new Error('Cloudinary did not return a result.'));
-                }
-                resolve(result.secure_url);
-            }
-        );
-        
-        const readableStream = new Readable();
-        readableStream._read = () => {};
-        readableStream.push(fileBuffer);
-        readableStream.push(null);
-        readableStream.pipe(uploadStream);
+    // Use a direct upload method
+    const result = await cloudinary.uploader.upload(dataUri, {
+        resource_type: 'image',
     });
 
-    return NextResponse.json({ imageUrl });
+    if (!result.secure_url) {
+        throw new Error('Cloudinary did not return a secure URL.');
+    }
+
+    return NextResponse.json({ imageUrl: result.secure_url });
 
   } catch (error) {
     console.error('API Upload Error:', error);
@@ -57,3 +46,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to process upload', details: errorMessage }, { status: 500 });
   }
 }
+

@@ -1,3 +1,5 @@
+import type { Timestamp } from 'firebase/firestore';
+
 export type ProductCategory = 'Perros Calientes' | 'Hamburguesas' | 'Bebidas' | 'Otros';
 
 export type Product = {
@@ -12,17 +14,22 @@ export type Product = {
 
 export type OrderItem = {
   productId: string;
+  productName: string;
   quantity: number;
-  price: number; // price at time of order
+  unitPrice: number;
 };
 
 export type OrderStatus = 'PENDIENTE_PAGO' | 'PAGADO' | 'EN_COCINA' | 'LISTO_PARA_RECOGER' | 'COMPLETADO' | 'CANCELADO';
 
 export type Order = {
   id: string;
-  userId: string; // Corresponds to user UID
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
   items: OrderItem[];
-  total: number;
+  totalAmount: number;
   status: OrderStatus;
-  createdAt: Date;
+  paymentMethod: string;
+  orderDate: Timestamp | Date; // Allow both for client-side and server-side representations
 };

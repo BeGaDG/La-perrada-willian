@@ -7,40 +7,17 @@ import Image from "next/image";
 import { ScrollArea } from "./ui/scroll-area";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { Separator } from "./ui/separator";
-import { createOrder } from '@/lib/actions';
-import { useToast } from "@/hooks/use-toast";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 export function CartSheet({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
-  const { items, removeItem, updateItemQuantity, clearCart, totalPrice } = useCart();
-  const { toast } = useToast();
-  const [isPending, startTransition] = React.useTransition();
+  const { items, removeItem, updateItemQuantity, totalPrice } = useCart();
+  const router = useRouter();
 
-  const handleCreateOrder = () => {
-    startTransition(async () => {
-      const orderItems = items.map(item => ({
-        productId: item.product.id,
-        quantity: item.quantity,
-        price: item.product.price,
-      }));
-
-      try {
-        await createOrder(orderItems);
-        toast({
-          title: "¡Pedido Realizado!",
-          description: "Tu pedido ha sido creado y está pendiente de pago.",
-        });
-        clearCart();
-        onOpenChange(false);
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "No se pudo crear el pedido. Intenta de nuevo.",
-        });
-      }
-    });
-  };
+  const handleCheckout = () => {
+    onOpenChange(false);
+    router.push('/checkout');
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -92,8 +69,8 @@ export function CartSheet({ open, onOpenChange }: { open: boolean, onOpenChange:
                   <span>Total</span>
                   <span>${totalPrice.toFixed(2)}</span>
                 </div>
-                <Button className="w-full" size="lg" onClick={handleCreateOrder} disabled={isPending}>
-                  {isPending ? "Creando pedido..." : "Crear Pedido"}
+                <Button className="w-full" size="lg" onClick={handleCheckout}>
+                  Ir a Pagar
                 </Button>
               </div>
             </SheetFooter>

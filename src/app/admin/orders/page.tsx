@@ -32,6 +32,14 @@ const getActionLabel = (status: OrderStatus): string => {
     return 'Avanzar';
 }
 
+const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(price);
+}
 
 function OrderCard({ order }: { order: Order }) {
 
@@ -68,7 +76,7 @@ function OrderCard({ order }: { order: Order }) {
         <Separator className='my-2'/>
         <div className='flex justify-between font-semibold'>
             <span>Total:</span>
-            <span>${order.totalAmount.toFixed(2)}</span>
+            <span>{formatPrice(order.totalAmount)}</span>
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-2">

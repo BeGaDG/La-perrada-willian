@@ -23,6 +23,13 @@ export function ProductCard({ product }: ProductCardProps) {
     });
   };
 
+  const formattedPrice = new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(product.price);
+
   return (
     <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
       <CardHeader className="p-0">
@@ -42,7 +49,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <p className="text-sm text-muted-foreground h-10">{product.description}</p>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between items-center">
-        <p className="text-xl font-bold text-primary">${product.price.toFixed(2)}</p>
+        <p className="text-xl font-bold text-primary">{formattedPrice}</p>
         <Button onClick={handleAddToCart} aria-label={`Añadir ${product.name} al carrito`}>
           <PlusCircle className="mr-2 h-5 w-5" />
           Añadir

@@ -13,6 +13,15 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React from "react";
 
+const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(price);
+}
+
 export default function CheckoutPage() {
     const { items, totalPrice, totalItems, clearCart } = useCart();
     const router = useRouter();
@@ -114,16 +123,16 @@ export default function CheckoutPage() {
                                     <Image src={item.product.imageUrl} alt={item.product.name} width={48} height={48} className="rounded-md aspect-square object-cover" data-ai-hint={item.product.imageHint} />
                                     <div>
                                         <p className="font-semibold">{item.product.name}</p>
-                                        <p className="text-sm text-muted-foreground">{item.quantity} x ${item.product.price.toFixed(2)}</p>
+                                        <p className="text-sm text-muted-foreground">{item.quantity} x {formatPrice(item.product.price)}</p>
                                     </div>
                                 </div>
-                                <p className="font-semibold">${(item.quantity * item.product.price).toFixed(2)}</p>
+                                <p className="font-semibold">{formatPrice(item.quantity * item.product.price)}</p>
                             </div>
                         ))}
                          <Separator />
                         <div className="flex justify-between font-bold text-lg">
                             <span>Total</span>
-                            <span>${totalPrice.toFixed(2)}</span>
+                            <span>{formatPrice(totalPrice)}</span>
                         </div>
                     </CardContent>
                     <CardFooter>

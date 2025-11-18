@@ -10,6 +10,15 @@ import { Separator } from "./ui/separator";
 import React from "react";
 import { useRouter } from "next/navigation";
 
+const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(price);
+}
+
 export function CartSheet({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
   const { items, removeItem, updateItemQuantity, totalPrice } = useCart();
   const router = useRouter();
@@ -41,7 +50,7 @@ export function CartSheet({ open, onOpenChange }: { open: boolean, onOpenChange:
                     />
                     <div className="flex-grow">
                       <p className="font-semibold">{item.product.name}</p>
-                      <p className="text-sm text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                      <p className="text-sm text-muted-foreground">{formatPrice(item.product.price)}</p>
                        <div className="flex items-center gap-2 mt-2">
                         <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateItemQuantity(item.product.id, item.quantity - 1)}>
                           <Minus className="h-3 w-3" />
@@ -53,7 +62,7 @@ export function CartSheet({ open, onOpenChange }: { open: boolean, onOpenChange:
                       </div>
                     </div>
                     <div className="flex flex-col items-end">
-                       <p className="font-semibold">${(item.product.price * item.quantity).toFixed(2)}</p>
+                       <p className="font-semibold">{formatPrice(item.product.price * item.quantity)}</p>
                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive mt-2" onClick={() => removeItem(item.product.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -67,7 +76,7 @@ export function CartSheet({ open, onOpenChange }: { open: boolean, onOpenChange:
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+                  <span>{formatPrice(totalPrice)}</span>
                 </div>
                 <Button className="w-full" size="lg" onClick={handleCheckout}>
                   Ir a Pagar

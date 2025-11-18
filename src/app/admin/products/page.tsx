@@ -143,7 +143,7 @@ function SeedDatabaseButton() {
   }
 
   return (
-     <AlertDialog>
+    <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button variant="outline" disabled={isLoading}>
           <Upload className="mr-2 h-4 w-4" />
@@ -166,9 +166,17 @@ function SeedDatabaseButton() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-    )
+  );
 }
 
+const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(price);
+}
 
 export default function AdminProductsPage() {
   const firestore = useFirestore();
@@ -235,7 +243,7 @@ export default function AdminProductsPage() {
                 <TableCell className="hidden md:table-cell max-w-sm truncate">
                   {product.description}
                 </TableCell>
-                <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
+                <TableCell className="text-right">{formatPrice(product.price)}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

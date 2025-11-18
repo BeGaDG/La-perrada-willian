@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  serverRuntimeConfig: {
+    // Variables that will only be available on the server side
+    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
+    cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
+  },
 };
 
 export default nextConfig;

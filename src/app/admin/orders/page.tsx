@@ -80,9 +80,9 @@ function PrintTicketDialog({ order, children }: { order: Order; children: React.
           </div>
           <div className='py-2 space-y-1'>
             {order.items.map((item, index) => (
-              <div key={index} className='grid grid-cols-[1fr_auto] gap-x-2'>
-                <p>{item.quantity}x {item.productName}</p>
-                <p></p> {/* Empty for alignment */}
+              <div key={index} className='grid grid-cols-[auto_1fr] gap-x-2'>
+                <span>{item.quantity}x</span>
+                <span>{item.productName}</span>
               </div>
             ))}
           </div>

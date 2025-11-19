@@ -2,7 +2,7 @@
 
 import type { Product } from '@/lib/types';
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 
 export type CartItem = {
   product: Product;
@@ -24,7 +24,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  const addItem = (product: Product) => {
+  const addItem = useCallback((product: Product) => {
     setItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.product.id === product.id);
       if (existingItem) {
@@ -34,13 +34,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prevItems, { product, quantity: 1 }];
     });
-  };
+  }, []);
 
-  const removeItem = (productId: string) => {
+  const removeItem = useCallback((productId: string) => {
     setItems((prevItems) => prevItems.filter((item) => item.product.id !== productId));
-  };
+  }, []);
 
-  const updateItemQuantity = (productId: string, quantity: number) => {
+  const updateItemQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeItem(productId);
       return;
@@ -50,11 +50,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         item.product.id === productId ? { ...item, quantity } : item
       )
     );
-  };
+  }, [removeItem]);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
-  };
+  }, []);
   
   const { totalItems, totalPrice } = useMemo(() => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);

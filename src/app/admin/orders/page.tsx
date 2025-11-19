@@ -81,7 +81,7 @@ function PrintTicketDialog({ order, children }: { order: Order; children: React.
           <div className='py-2 space-y-1'>
             {order.items.map((item, index) => (
               <div key={index} className='grid grid-cols-[auto_1fr_auto] gap-x-2 items-start'>
-                <span>{item.quantity}x</span>
+                <span className="font-semibold">{item.quantity}x</span>
                 <span className='truncate'>{item.productName}</span>
                 <span className='font-medium'>{formatPrice(item.unitPrice)}</span>
               </div>
@@ -179,7 +179,7 @@ function OrderCard({ order, onMoveState }: { order: Order, onMoveState: (orderId
 
 export default function AdminOrdersPage() {
   const firestore = useFirestore();
-  const ordersRef = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+  const ordersRef = useMemoFirebase(() => firestore ? collection(firestore, 'orders') : null, [firestore]);
   const ordersQuery = useMemoFirebase(() => ordersRef && query(ordersRef, orderBy('orderDate', 'desc')), [ordersRef]);
   const { data: remoteOrders, isLoading } = useCollection<Order>(ordersQuery);
 
@@ -206,7 +206,7 @@ export default function AdminOrdersPage() {
           if (Notification.permission === "granted") {
             new Notification("¡Nuevo Pedido!", {
               body: `Pedido de ${order.customerName} por ${formatPrice(order.totalAmount)}.`,
-              icon: "/favicon.ico", // Optional: add an icon
+              icon: "/favicon.ico",
             });
           }
           notifiedOrderIds.current.add(order.id);
@@ -224,7 +224,8 @@ export default function AdminOrdersPage() {
     );
 
     try {
-      await updateOrderStatus(orderId, newStatus);
+      if (!firestore) return;
+      await updateOrderStatus(firestore, orderId, newStatus);
     } catch (e) {
       // Revert on error
       setLocalOrders(remoteOrders || []);

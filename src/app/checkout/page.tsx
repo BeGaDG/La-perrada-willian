@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { useFirestore } from "@/firebase";
 
 
 const formatPrice = (price: number) => {
@@ -96,6 +97,7 @@ export default function CheckoutPage() {
     const { items, totalPrice, totalItems, clearCart } = useCart();
     const router = useRouter();
     const { toast } = useToast();
+    const firestore = useFirestore();
     const [isPending, startTransition] = React.useTransition();
 
     if (totalItems === 0 && !isPending) {
@@ -129,7 +131,7 @@ export default function CheckoutPage() {
 
         startTransition(async () => {
             try {
-                await createOrder(orderPayload);
+                await createOrder(firestore, orderPayload);
                 toast({
                     title: "¡Pedido Realizado!",
                     description: "Tu pedido ha sido creado y está pendiente de pago.",

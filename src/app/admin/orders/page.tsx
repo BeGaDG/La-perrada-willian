@@ -62,27 +62,34 @@ function PrintTicketDialog({ order, children }: { order: Order; children: React.
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-xs sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle className='font-mono tracking-widest text-center'>LA PERRADA DE WILLIAM</DialogTitle>
+      <DialogContent className="max-w-xs sm:max-w-sm font-mono">
+        <DialogHeader className="text-center">
+          <DialogTitle className='font-mono tracking-widest text-lg'>LA PERRADA DE WILLIAM</DialogTitle>
         </DialogHeader>
-        <div className="font-mono text-sm bg-stone-50 p-4 rounded-md">
-          <p>TICKET DE COCINA</p>
-          <p>-------------------------</p>
-          <p>Pedido: #{order.id.substring(0, 5)}</p>
-          <p>Cliente: {order.customerName}</p>
-          <p>Dirección: {order.customerAddress}</p>
-          <p>Teléfono: {order.customerPhone}</p>
-          <p>Fecha: {formattedDate}</p>
-          <p>-------------------------</p>
-          <div className='space-y-1 my-2'>
+        <div className="text-sm bg-stone-50 p-4 rounded-md border">
+          <div className="text-center pb-2 border-b-2 border-dashed border-stone-400">
+             <p className="font-bold">TICKET DE COCINA</p>
+             <p>Pedido: #{order.id.substring(0, 5)}</p>
+             <p>{formattedDate}</p>
+          </div>
+          <div className="py-2 border-b-2 border-dashed border-stone-400">
+            <p className="font-semibold">CLIENTE:</p>
+            <p>{order.customerName}</p>
+            <p>{order.customerAddress}</p>
+            <p>{order.customerPhone}</p>
+          </div>
+          <div className='py-2 space-y-1'>
             {order.items.map((item, index) => (
-              <p key={index} className='flex justify-between'>
-                <span>{item.quantity}x {item.productName}</span>
-              </p>
+              <div key={index} className='grid grid-cols-[1fr_auto] gap-x-2'>
+                <p>{item.quantity}x {item.productName}</p>
+                <p></p> {/* Empty for alignment */}
+              </div>
             ))}
           </div>
-          <p>-------------------------</p>
+          <div className="pt-2 border-t-2 border-dashed border-stone-400 text-right">
+             <p className="font-bold">TOTAL: {formatPrice(order.totalAmount)}</p>
+             <p className="text-xs">Método: {order.paymentMethod}</p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

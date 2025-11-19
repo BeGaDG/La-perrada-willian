@@ -185,6 +185,8 @@ export default function AdminOrdersPage() {
 
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
   const notifiedOrderIds = useRef(new Set());
+  const audioRef = useRef<HTMLAudioElement>(null);
+
 
   // Request notification permission on mount
   useEffect(() => {
@@ -207,7 +209,11 @@ export default function AdminOrdersPage() {
             new Notification("¡Nuevo Pedido!", {
               body: `Pedido de ${order.customerName} por ${formatPrice(order.totalAmount)}.`,
               icon: "/favicon.ico",
+              tag: order.id, // Use order ID as tag to prevent multiple notifications for the same order
             });
+
+             // Play sound
+            audioRef.current?.play().catch(e => console.error("Error playing sound:", e));
           }
           notifiedOrderIds.current.add(order.id);
         });
@@ -255,6 +261,8 @@ export default function AdminOrdersPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8 font-headline">Panel de Pedidos</h1>
+      {/* Audio element for notification sound */}
+      <audio ref={audioRef} src="/notification.mp3" preload="auto" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kanbanColumns.map(col => (
           <div key={col.status} className="bg-muted/50 rounded-lg p-4">

@@ -24,17 +24,22 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rules for the orders collection.
-     * Admins can list all orders for the admin panel.
-     * Customers can create orders.
-     * Individual documents can be read/updated by admins.
+     * @description Rules for individual order documents.
      */
     match /orders/{orderId} {
-      allow list: if isAdmin(); // Rule for querying the collection
       allow create: if true; // Anyone can create an order
       allow get, update: if isAdmin(); // Admin can get or update a single order
       allow delete: if false; // No one can delete orders
     }
+
+    /**
+     * @description Rules for querying the entire orders collection.
+     * Admins can list all orders for the admin panel.
+     */
+    match /orders/{document=**} {
+      allow list: if isAdmin();
+    }
+
 
     /**
      * @description Allows the creation of order items when an order is created.
@@ -104,4 +109,3 @@ service firebase.storage {
     }
   }
 }
-

@@ -4,28 +4,32 @@ import * as admin from 'firebase-admin';
 
 /**
  * Returns a ready-to-use, initialized instance of the Admin Firestore SDK.
- * This function handles lazy initialization to ensure `initializeApp` is called only once,
- * relying on Firebase's automatic credential detection in the hosting environment.
+ * This function handles lazy initialization to ensure `initializeApp` is called only once.
+ * It explicitly constructs credentials from environment variables.
  */
 export async function getAdminFirestore() {
-  // Check if the app is already initialized to prevent re-initialization errors.
   if (!admin.apps.length) {
     try {
-      // In a hosted Firebase environment (like App Hosting or Cloud Functions),
-      // calling initializeApp() without arguments will automatically use the
-      // project's default service account credentials.
-      admin.initializeApp();
+      if (!process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL) {
+        throw new Error('Firebase environment variables are not set.');
+      }
+      
+      const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: privateKey,
+        }),
+      });
     } catch (e: any) {
-      // This catch block is a safeguard. If initialization fails, it will log a
-      // descriptive error message, which is crucial for debugging.
       console.error(
-        'Firebase Admin SDK initialization failed. This can happen if the environment is not configured with the correct Google Cloud service account credentials. In a local dev environment, you might need to set the GOOGLE_APPLICATION_CREDENTIALS environment variable. In a hosted Firebase environment, this should be automatic.',
-        e
+        'Firebase Admin SDK initialization failed:',
+        e.message
       );
-      // Re-throwing the error to ensure the calling function knows initialization failed.
-      throw new Error('Could not initialize Firebase Admin SDK.');
+      throw new Error('Could not initialize Firebase Admin SDK. Please check server logs and environment variables.');
     }
   }
-  // Return the initialized Firestore instance from the default app.
   return admin.firestore();
 }

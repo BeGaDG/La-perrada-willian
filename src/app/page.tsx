@@ -9,6 +9,7 @@ import { Menu, Flame, GlassWater, Drumstick, Search, Pizza, Soup } from 'lucide-
 import type { LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const categoryIcons: Record<string, LucideIcon> = {
   'PERROS': Flame,
@@ -101,12 +102,14 @@ export default function Home() {
                  <div className="h-9 w-full bg-muted rounded-md animate-pulse"></div>
             ) : (
              <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:flex lg:flex-wrap h-auto">
-                    <TabsTrigger value="all">Todas</TabsTrigger>
-                    {categories?.map(cat => (
-                        <TabsTrigger key={cat.id} value={cat.name}>{cat.name}</TabsTrigger>
-                    ))}
-                </TabsList>
+                <ScrollArea className="w-full whitespace-nowrap">
+                    <TabsList className="inline-flex h-auto">
+                        <TabsTrigger value="all">Todas</TabsTrigger>
+                        {categories?.map(cat => (
+                            <TabsTrigger key={cat.id} value={cat.name}>{cat.name}</TabsTrigger>
+                        ))}
+                    </TabsList>
+                </ScrollArea>
              </Tabs>
             )}
         </div>

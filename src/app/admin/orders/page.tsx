@@ -31,10 +31,10 @@ const statusFlow: Record<OrderStatus, { next: OrderStatus | null; prev: OrderSta
 };
 
 const getActionLabel = (status: OrderStatus): string => {
-    if (status === 'PENDIENTE_PAGO') return 'Confirmar Pago y Enviar a Cocina';
+    if (status === 'PENDIENTE_PAGO') return 'Confirmar Pago';
     const next = statusFlow[status]?.next;
-    if (next === 'LISTO_REPARTO') return 'Marcar como Listo para Reparto';
-    if (next === 'COMPLETADO') return 'Marcar como Completado';
+    if (next === 'LISTO_REPARTO') return 'Pedido Listo';
+    if (next === 'COMPLETADO') return 'Completar Pedido';
     return 'Avanzar';
 }
 
@@ -79,10 +79,11 @@ function PrintTicketDialog({ order, children }: { order: Order; children: React.
             <p>{order.customerPhone}</p>
           </div>
           <div className='py-2 space-y-1'>
-            {order.items.map((item, index) => (
-              <div key={index} className='grid grid-cols-[auto_1fr] gap-x-2'>
+             {order.items.map((item, index) => (
+              <div key={index} className='grid grid-cols-[auto_1fr_auto] gap-x-2 items-start'>
                 <span>{item.quantity}x</span>
-                <span>{item.productName}</span>
+                <span className='truncate'>{item.productName}</span>
+                <span className='font-medium'>{formatPrice(item.unitPrice)}</span>
               </div>
             ))}
           </div>
@@ -164,7 +165,7 @@ function OrderCard({ order, onMoveState }: { order: Order, onMoveState: (orderId
                 </Button>
             </PrintTicketDialog>
             {next && (
-                <Button onClick={() => onMoveState(order.id, next)} className="w-full whitespace-normal h-auto">
+                <Button onClick={() => onMoveState(order.id, next)} className="w-full">
                     {getActionLabel(order.status)}
                 </Button>
             )}

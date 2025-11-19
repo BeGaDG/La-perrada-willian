@@ -5,13 +5,14 @@ import { usePathname, useRouter } from "next/navigation"
 import { Package, ScrollText, LogOut, Tags, LayoutDashboard, Search, Menu, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useUser, useAuth, useCollection, useMemoFirebase, useFirestore } from "@/firebase"
+import { useUser, useAuth, useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase"
 import { useEffect, useState, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { NotificationBell } from "@/components/admin/notification-bell"
-import { collection, query, where } from "firebase/firestore"
-import type { Order } from "@/lib/types"
+import { collection, query, where, doc } from "firebase/firestore"
+import type { Order, ShopSettings } from "@/lib/types"
+import { ShopStatusIndicator } from "@/components/admin/shop-status-indicator"
 
 export default function AdminLayout({
     children,
@@ -30,6 +31,10 @@ export default function AdminLayout({
         return query(collection(firestore, 'orders'), where('status', '==', 'PENDIENTE_PAGO'));
     }, [firestore]);
     const { data: newOrders, isLoading: isLoadingOrders } = useCollection<Order>(newOrdersQuery);
+    
+    const settingsRef = useMemoFirebase(() => doc(firestore, 'settings', 'shop'), [firestore]);
+    const { data: settings, isLoading: isLoadingSettings } = useDoc<ShopSettings>(settingsRef);
+    const isShopOpen = settings?.isOpen ?? false;
 
     const newOrdersCount = useMemo(() => newOrders?.length || 0, [newOrders]);
 
@@ -139,7 +144,7 @@ export default function AdminLayout({
                         </SheetContent>
                     </Sheet>
 
-                    <h1 className="font-bold text-lg">Admin</h1>
+                    <ShopStatusIndicator isOpen={isShopOpen} isLoading={isLoadingSettings} />
 
                     <NotificationBell newOrders={newOrders} />
 
@@ -186,6 +191,7 @@ export default function AdminLayout({
                             </div>
 
                             <div className="flex items-center gap-4">
+                                <ShopStatusIndicator isOpen={isShopOpen} isLoading={isLoadingSettings} />
                                 <NotificationBell newOrders={newOrders} />
                             </div>
                         </div>

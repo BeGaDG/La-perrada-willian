@@ -7,7 +7,7 @@ import * as admin from 'firebase-admin';
  * This function handles lazy initialization to ensure `initializeApp` is called only once,
  * relying on Firebase's automatic credential detection in the hosting environment.
  */
-export function getAdminFirestore() {
+export async function getAdminFirestore() {
   // Check if the app is already initialized to prevent re-initialization errors.
   if (!admin.apps.length) {
     try {

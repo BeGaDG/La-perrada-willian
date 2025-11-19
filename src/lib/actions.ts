@@ -23,7 +23,7 @@ type CreateOrderPayload = {
 
 
 export async function createOrder(payload: CreateOrderPayload) {
-    const firestore = getAdminFirestore();
+    const firestore = await getAdminFirestore();
     const ordersCollection = firestore.collection("orders");
 
     const newOrder = {
@@ -46,7 +46,7 @@ export async function createOrder(payload: CreateOrderPayload) {
 }
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
-  const firestore = getAdminFirestore();
+  const firestore = await getAdminFirestore();
   const orderRef = firestore.doc(`orders/${orderId}`);
 
   const statusUpdate: { status: OrderStatus; [key: string]: any } = { status };

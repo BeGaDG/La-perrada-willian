@@ -8,8 +8,8 @@ import { ProductCard } from '@/components/product-card';
 import { Menu, Flame, GlassWater, Drumstick, Search, Pizza, Soup } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 const categoryIcons: Record<string, LucideIcon> = {
   'PERROS': Flame,
@@ -87,7 +87,7 @@ export default function Home() {
       </section>
 
        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b">
-        <div className="container py-4 space-y-4">
+        <div className="container py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -99,18 +99,19 @@ export default function Home() {
             </div>
 
             {isLoading ? (
-                 <div className="h-9 w-full bg-muted rounded-md animate-pulse"></div>
+                 <div className="h-10 w-full bg-muted rounded-md animate-pulse"></div>
             ) : (
-             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-                <ScrollArea className="w-full whitespace-nowrap">
-                    <TabsList className="inline-flex h-auto">
-                        <TabsTrigger value="all">Todas</TabsTrigger>
-                        {categories?.map(cat => (
-                            <TabsTrigger key={cat.id} value={cat.name}>{cat.name}</TabsTrigger>
-                        ))}
-                    </TabsList>
-                </ScrollArea>
-             </Tabs>
+             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
+                  {categories?.map(cat => (
+                    <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
         </div>
       </div>

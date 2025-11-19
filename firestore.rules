@@ -24,22 +24,16 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rules for individual order documents.
+     * @description Rules for individual order documents and the entire collection.
+     * - Anyone can create an order.
+     * - Admins can read a single order, update any order, and list all orders for the admin panel.
+     * - No one can delete orders.
      */
     match /orders/{orderId} {
-      allow create: if true; // Anyone can create an order
-      allow get, update: if isAdmin(); // Admin can get or update a single order
-      allow delete: if false; // No one can delete orders
+      allow create: if true;
+      allow get, list, update: if isAdmin();
+      allow delete: if false;
     }
-
-    /**
-     * @description Rules for querying the entire orders collection.
-     * Admins can list all orders for the admin panel.
-     */
-    match /orders/{document=**} {
-      allow list: if isAdmin();
-    }
-
 
     /**
      * @description Allows the creation of order items when an order is created.

@@ -130,6 +130,7 @@ export default function CheckoutPage() {
         }
 
         startTransition(async () => {
+            if (!firestore) return;
             try {
                 await createOrder(firestore, orderPayload);
                 toast({
@@ -161,45 +162,45 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>1. Información de Entrega</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
-                                <div>
-                                    <Label htmlFor="name">Nombre Completo</Label>
-                                    <Input id="name" name="name" required autoComplete="name" />
-                                </div>
-                                <div>
-                                    <Label htmlFor="phone">Teléfono de Contacto</Label>
-                                    <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
-                                </div>
-                                <div>
-                                    <Label htmlFor="address">Dirección de Entrega</Label>
-                                    <Input id="address" name="address" required autoComplete="street-address" />
-                                </div>
-                             </form>
-                        </CardContent>
-                    </Card>
+                    <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>1. Información de Entrega</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                    <div>
+                                        <Label htmlFor="name">Nombre Completo</Label>
+                                        <Input id="name" name="name" required autoComplete="name" />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="phone">Teléfono de Contacto</Label>
+                                        <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="address">Dirección de Entrega</Label>
+                                        <Input id="address" name="address" required autoComplete="street-address" />
+                                    </div>
+                            </CardContent>
+                        </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>2. Método de Pago</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <RadioGroup form="checkout-form" name="paymentMethod" defaultValue="EFECTIVO" className="space-y-2">
-                                <div className="flex items-center space-x-3 p-3 rounded-md border has-[input:checked]:border-primary">
-                                    <RadioGroupItem value="EFECTIVO" id="efectivo" />
-                                    <Label htmlFor="efectivo" className="flex-grow cursor-pointer">Efectivo contra entrega</Label>
-                                </div>
-                                <div className="flex items-center space-x-3 p-3 rounded-md border has-[input:checked]:border-primary">
-                                    <RadioGroupItem value="TRANSFERENCIA" id="transferencia" />
-                                    <Label htmlFor="transferencia" className="flex-grow cursor-pointer">Transferencia (Bancolombia/Nequi)</Label>
-                                </div>
-                            </RadioGroup>
-                        </CardContent>
-                    </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>2. Método de Pago</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <RadioGroup form="checkout-form" name="paymentMethod" defaultValue="EFECTIVO" className="space-y-2">
+                                    <div className="flex items-center space-x-3 p-3 rounded-md border has-[input:checked]:border-primary">
+                                        <RadioGroupItem value="EFECTIVO" id="efectivo" />
+                                        <Label htmlFor="efectivo" className="flex-grow cursor-pointer">Efectivo contra entrega</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-3 p-3 rounded-md border has-[input:checked]:border-primary">
+                                        <RadioGroupItem value="TRANSFERENCIA" id="transferencia" />
+                                        <Label htmlFor="transferencia" className="flex-grow cursor-pointer">Transferencia (Bancolombia/Nequi)</Label>
+                                    </div>
+                                </RadioGroup>
+                            </CardContent>
+                        </Card>
+                    </form>
                 </div>
                 
                 {/* Columna Derecha: Resumen en Desktop */}

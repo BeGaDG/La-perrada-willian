@@ -41,5 +41,3 @@ export type Order = {
   readyAt?: Timestamp;
   completedAt?: Timestamp;
 };
-
-    

@@ -1,36 +1,76 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { collection } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import type { Product } from '@/lib/types';
+import type { Product, Category } from '@/lib/types';
 import { ProductCard } from '@/components/product-card';
-import { Menu, Flame, GlassWater, Drumstick } from 'lucide-react';
+import { Menu, Flame, GlassWater, Drumstick, Search, Pizza, Soup } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const categoryIcons: Record<string, LucideIcon> = {
   'PERROS': Flame,
-  'HAMBURGUESAS': Menu,
+  'HAMBURGUESAS': Drumstick,
   'BEBIDAS': GlassWater,
-  'SUIZOS': Drumstick,
-  'MINI SUIZOS': Drumstick,
-  'PIZZAS': Drumstick,
-  'ADICIONALES': Drumstick,
+  'SUIZOS': Soup,
+  'MINI SUIZOS': Soup,
+  'PIZZAS': Pizza,
+  'ADICIONALES': Menu,
 };
 
 export default function Home() {
   const firestore = useFirestore();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
   const productsRef = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
-  const { data: products, isLoading } = useCollection<Product>(productsRef);
+  const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
+
+  const categoriesRef = useMemoFirebase(() => collection(firestore, 'categories'), [firestore]);
+  const { data: categories, isLoading: isLoadingCategories } = useCollection<Category>(categoriesRef);
+
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    return products
+      .filter(product => 
+        selectedCategory === 'all' || product.category === selectedCategory
+      )
+      .filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+  }, [products, selectedCategory, searchTerm]);
 
   const productsByCategory = useMemo(() => {
-    if (!products) return {};
-    return products.reduce((acc, product) => {
+    if (!filteredProducts) return {};
+    const grouped = filteredProducts.reduce((acc, product) => {
       (acc[product.category] = acc[product.category] || []).push(product);
       return acc;
     }, {} as Record<string, Product[]>);
-  }, [products]);
 
+    // Ordenar las categorías según el orden original si es posible
+    if (categories) {
+        const orderedGrouped: Record<string, Product[]> = {};
+        const categoryOrder = categories.map(c => c.name);
+        categoryOrder.forEach(catName => {
+            if(grouped[catName]) {
+                orderedGrouped[catName] = grouped[catName];
+            }
+        })
+        // Añadir categorías que puedan no estar en la lista principal
+         Object.keys(grouped).forEach(catName => {
+            if(!orderedGrouped[catName]) {
+                orderedGrouped[catName] = grouped[catName];
+            }
+        });
+        return orderedGrouped;
+    }
+
+    return grouped;
+  }, [filteredProducts, categories]);
+
+  const isLoading = isLoadingProducts || isLoadingCategories;
 
   return (
     <div>
@@ -45,12 +85,48 @@ export default function Home() {
         </div>
       </section>
 
+       <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b">
+        <div className="container py-4 space-y-4">
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Buscar producto..."
+                    className="pl-10 w-full"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+
+            {isLoading ? (
+                 <div className="h-9 w-full bg-muted rounded-md animate-pulse"></div>
+            ) : (
+             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:flex lg:flex-wrap h-auto">
+                    <TabsTrigger value="all">Todas</TabsTrigger>
+                    {categories?.map(cat => (
+                        <TabsTrigger key={cat.id} value={cat.name}>{cat.name}</TabsTrigger>
+                    ))}
+                </TabsList>
+             </Tabs>
+            )}
+        </div>
+      </div>
+
       <div className="container py-12 md:py-16">
         {isLoading && <p className="text-center">Cargando menú...</p>}
+        
+        {!isLoading && filteredProducts.length === 0 && (
+            <div className="text-center py-12">
+                <p className="text-lg font-semibold">No se encontraron productos</p>
+                <p className="text-muted-foreground">Intenta cambiar los filtros o el término de búsqueda.</p>
+            </div>
+        )}
+
         {Object.entries(productsByCategory).map(([category, categoryProducts]) => {
-          const Icon = categoryIcons[category];
+          if (categoryProducts.length === 0) return null;
+          const Icon = categoryIcons[category] || Menu;
           return (
-            <section key={category} className="mb-12">
+            <section key={category} id={category} className="mb-12 scroll-mt-24">
               <div className="flex items-center gap-4 mb-6">
                 {Icon && <Icon className="h-8 w-8 text-primary" />}
                 <h2 className="text-3xl font-bold font-headline">{category}</h2>

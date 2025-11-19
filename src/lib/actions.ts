@@ -1,6 +1,5 @@
 'use client';
 
-import { revalidatePath } from "next/cache";
 import { Timestamp, addDoc, collection, doc, serverTimestamp, updateDoc, type Firestore } from "firebase/firestore";
 import type { OrderStatus } from "./types";
 
@@ -22,6 +21,9 @@ type CreateOrderPayload = {
 
 
 export async function createOrder(firestore: Firestore, payload: CreateOrderPayload) {
+    if (!firestore) {
+        throw new Error("Firestore instance is not available.");
+    }
     const ordersCollection = collection(firestore, "orders");
 
     const newOrder = {
@@ -34,7 +36,6 @@ export async function createOrder(firestore: Firestore, payload: CreateOrderPayl
     try {
         const docRef = await addDoc(ordersCollection, newOrder);
         console.log("Order created with ID: ", docRef.id);
-        // revalidatePath no funciona en el cliente, pero la UI se actualizará por el listener de useCollection
     } catch (error) {
         console.error("Error creating order:", error);
         throw new Error("Could not create order.");
@@ -42,6 +43,9 @@ export async function createOrder(firestore: Firestore, payload: CreateOrderPayl
 }
 
 export async function updateOrderStatus(firestore: Firestore, orderId: string, status: OrderStatus) {
+    if (!firestore) {
+        throw new Error("Firestore instance is not available.");
+    }
   const orderRef = doc(firestore, "orders", orderId);
 
   const statusUpdate: { status: OrderStatus; [key: string]: any } = { status };
@@ -58,7 +62,6 @@ export async function updateOrderStatus(firestore: Firestore, orderId: string, s
   try {
     await updateDoc(orderRef, statusUpdate);
     console.log(`Order ${orderId} updated to ${status}`);
-     // revalidatePath no funciona en el cliente, pero la UI se actualizará por el listener de useCollection
   } catch (error) {
     console.error("Error updating order status:", error);
     throw new Error("Could not update order status.");

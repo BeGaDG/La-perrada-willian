@@ -1,15 +1,16 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { collection } from 'firebase/firestore';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import type { Product, Category } from '@/lib/types';
+import { collection, doc } from 'firebase/firestore';
+import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import type { Product, Category, ShopSettings } from '@/lib/types';
 import { ProductCard } from '@/components/product-card';
-import { Menu, Flame, GlassWater, Drumstick, Search, Pizza, Soup } from 'lucide-react';
+import { Menu, Flame, GlassWater, Drumstick, Search, Pizza, Soup, XCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { CategoryPills } from '@/components/category-pills';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const categoryIcons: Record<string, LucideIcon> = {
   'PERROS': Flame,
@@ -20,6 +21,20 @@ const categoryIcons: Record<string, LucideIcon> = {
   'PIZZAS': Pizza,
   'ADICIONALES': Menu,
 };
+
+function ClosedShopBanner() {
+  return (
+    <div className='container pt-4'>
+      <Alert variant="destructive" className='border-2 border-destructive/50 bg-destructive/10'>
+        <XCircle className="h-4 w-4" />
+        <AlertTitle className='font-bold'>Tienda Cerrada</AlertTitle>
+        <AlertDescription>
+          En este momento no estamos aceptando pedidos. ¡Vuelve pronto!
+        </AlertDescription>
+      </Alert>
+    </div>
+  )
+}
 
 export default function Home() {
   const firestore = useFirestore();
@@ -35,6 +50,11 @@ export default function Home() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const settingsRef = useMemoFirebase(() => doc(firestore, 'settings', 'shop'), [firestore]);
+  const { data: settings, isLoading: isLoadingSettings } = useDoc<ShopSettings>(settingsRef);
+  
+  const isShopOpen = settings?.isOpen ?? false;
 
   const productsRef = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
@@ -80,7 +100,7 @@ export default function Home() {
     return grouped;
   }, [filteredProducts, categories]);
 
-  const isLoading = isLoadingProducts || isLoadingCategories;
+  const isLoading = isLoadingProducts || isLoadingCategories || isLoadingSettings;
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
@@ -102,6 +122,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      
+      {!isLoading && !isShopOpen && <ClosedShopBanner />}
+      
       {/* Hero Section Compacto (Mobile) / Expandido (Desktop) */}
       <section className={cn(
         "relative bg-primary/5 pt-4 pb-6 md:py-12 transition-all duration-300",
@@ -184,7 +207,7 @@ export default function Home() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
                   {categoryProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product.id} product={product} disabled={!isShopOpen} />
                   ))}
                 </div>
               </section>

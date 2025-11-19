@@ -1,17 +1,31 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Menu, X } from 'lucide-react';
+import { ShoppingCart, Menu, X, Ban } from 'lucide-react';
 import { Button } from './ui/button';
 import { useCart } from './cart-provider';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { ShopSettings } from '@/lib/types';
 
 export function Header() {
-  const { totalItems } = useCart();
+  const { totalItems, clearCart } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const isAdminPage = pathname?.startsWith('/admin');
+
+  const firestore = useFirestore();
+  const settingsRef = useMemoFirebase(() => doc(firestore, 'settings', 'shop'), [firestore]);
+  const { data: settings } = useDoc<ShopSettings>(settingsRef);
+  const isShopOpen = settings?.isOpen ?? false;
+
+  useEffect(() => {
+    if (!isShopOpen) {
+      clearCart();
+    }
+  }, [isShopOpen, clearCart]);
 
   if (isAdminPage) return null;
 
@@ -32,11 +46,11 @@ export function Header() {
         </nav>
 
         <div className="flex items-center space-x-2">
-          <Button asChild variant="default" size="sm" className="relative bg-slate-900 hover:bg-slate-800">
+          <Button asChild variant="default" size="sm" className="relative bg-slate-900 hover:bg-slate-800" disabled={!isShopOpen}>
             <Link href="/checkout">
-              <ShoppingCart className="h-4 w-4 mr-2" />
+              {!isShopOpen ? <Ban className="h-4 w-4 mr-2" /> : <ShoppingCart className="h-4 w-4 mr-2" />}
               <span className="hidden sm:inline">Carrito</span>
-              {totalItems > 0 && (
+              {totalItems > 0 && isShopOpen && (
                 <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
                   {totalItems}
                 </span>

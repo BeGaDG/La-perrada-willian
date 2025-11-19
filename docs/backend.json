@@ -197,6 +197,21 @@
         "id",
         "name"
       ]
+    },
+    "ShopSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ShopSettings",
+      "type": "object",
+      "description": "Represents the global settings for the shop, such as whether it is open for orders.",
+      "properties": {
+        "isOpen": {
+          "type": "boolean",
+          "description": "Indicates if the shop is currently open and accepting orders."
+        }
+      },
+      "required": [
+        "isOpen"
+      ]
     }
   },
   "auth": {
@@ -289,6 +304,17 @@
               "description": "Unique identifier for the category."
             }
           ]
+        }
+      },
+      {
+        "path": "/settings/shop",
+        "definition": {
+          "entityName": "ShopSettings",
+          "schema": {
+            "$ref": "#/backend/entities/ShopSettings"
+          },
+          "description": "Singleton document to store global shop settings. Publicly readable, but only writable by admins.",
+          "params": []
         }
       }
     ],

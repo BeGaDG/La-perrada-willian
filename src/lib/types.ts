@@ -13,7 +13,7 @@ export type Product = {
 };
 
 export type Category = {
-  id: string;
+  id:string;
   name: string;
 };
 
@@ -41,4 +41,9 @@ export type Order = {
   readyAt?: Timestamp;
   completedAt?: Timestamp;
   notes?: string;
+};
+
+export type ShopSettings = {
+  id?: string;
+  isOpen: boolean;
 };

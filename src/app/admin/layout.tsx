@@ -2,13 +2,16 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Package, ScrollText, LogOut, Tags, LayoutDashboard, Bell, Search, Menu } from "lucide-react"
+import { Package, ScrollText, LogOut, Tags, LayoutDashboard, Search, Menu, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useUser, useAuth } from "@/firebase"
-import { useEffect, useState } from "react"
+import { useUser, useAuth, useCollection, useMemoFirebase, useFirestore } from "@/firebase"
+import { useEffect, useState, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { NotificationBell } from "@/components/admin/notification-bell"
+import { collection, query, where } from "firebase/firestore"
+import type { Order } from "@/lib/types"
 
 export default function AdminLayout({
     children,
@@ -20,6 +23,15 @@ export default function AdminLayout({
     const auth = useAuth();
     const router = useRouter();
     const [open, setOpen] = useState(false);
+    const firestore = useFirestore();
+
+    const newOrdersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'orders'), where('status', '==', 'PENDIENTE_PAGO'));
+    }, [firestore]);
+    const { data: newOrders, isLoading: isLoadingOrders } = useCollection<Order>(newOrdersQuery);
+
+    const newOrdersCount = useMemo(() => newOrders?.length || 0, [newOrders]);
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -42,30 +54,52 @@ export default function AdminLayout({
     }
 
     const navItems = [
-        { href: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
-        { href: "/admin/orders", icon: ScrollText, label: "Pedidos" },
+        { href: "/admin/orders", icon: ScrollText, label: "Pedidos", badge: newOrdersCount > 0 ? newOrdersCount : undefined },
         { href: "/admin/products", icon: Package, label: "Productos" },
         { href: "/admin/categories", icon: Tags, label: "Categorías" },
+        { href: "/admin/settings", icon: Settings, label: "Ajustes" },
+
     ];
 
     const NavLinks = () => (
         <>
+            <Link
+                href="/admin"
+                onClick={() => setOpen(false)}
+                className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    pathname === "/admin"
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-600 hover:bg-slate-100"
+                )}
+            >
+                <LayoutDashboard className="h-5 w-5" />
+                Dashboard
+            </Link>
+            <div className="px-3 py-2 text-xs font-semibold text-slate-400">Gestión</div>
             {navItems.map((item) => {
-                const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+                const isActive = pathname.startsWith(item.href);
                 return (
                     <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setOpen(false)}
                         className={cn(
-                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                            "flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                             isActive
                                 ? "bg-slate-900 text-white"
                                 : "text-slate-600 hover:bg-slate-100"
                         )}
                     >
-                        <item.icon className="h-5 w-5" />
-                        {item.label}
+                        <div className="flex items-center gap-3">
+                            <item.icon className="h-5 w-5" />
+                            {item.label}
+                        </div>
+                        {item.badge && (
+                            <span className="bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                {item.badge}
+                            </span>
+                        )}
                     </Link>
                 );
             })}
@@ -105,12 +139,10 @@ export default function AdminLayout({
                         </SheetContent>
                     </Sheet>
 
-                    <h1 className="font-bold text-lg">Dashboard</h1>
+                    <h1 className="font-bold text-lg">Admin</h1>
 
-                    <Button variant="ghost" size="icon" className="relative">
-                        <Bell className="h-5 w-5" />
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </Button>
+                    <NotificationBell newOrders={newOrders} />
+
                 </div>
             </header>
 
@@ -154,10 +186,7 @@ export default function AdminLayout({
                             </div>
 
                             <div className="flex items-center gap-4">
-                                <Button variant="ghost" size="icon" className="relative">
-                                    <Bell className="h-5 w-5" />
-                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                                </Button>
+                                <NotificationBell newOrders={newOrders} />
                             </div>
                         </div>
                     </header>

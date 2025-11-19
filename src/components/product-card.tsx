@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Plus, ImageIcon } from 'lucide-react';
+import { Plus, ImageIcon, Ban } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { useCart } from '@/components/cart-provider';
 import { useToast } from '@/hooks/use-toast';
@@ -11,13 +11,15 @@ import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
+  disabled?: boolean;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, disabled = false }: ProductCardProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
 
   const handleAddToCart = () => {
+    if (disabled) return;
     addItem(product);
     toast({
       description: `${product.name} añadido al carrito.`,
@@ -33,7 +35,10 @@ export function ProductCard({ product }: ProductCardProps) {
   }).format(product.price);
 
   return (
-    <Card className="group overflow-hidden border-0 shadow-sm bg-card hover:bg-accent/5 transition-colors duration-200 rounded-2xl">
+    <Card className={cn(
+      "group overflow-hidden border-0 shadow-sm bg-card hover:bg-accent/5 transition-colors duration-200 rounded-2xl",
+      disabled && "opacity-50 hover:bg-card"
+    )}>
       <div className="flex p-3 gap-4 h-full">
         {/* Imagen del producto */}
         <div className="relative w-28 h-28 md:w-32 md:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-muted/50 shadow-inner">
@@ -49,6 +54,11 @@ export function ProductCard({ product }: ProductCardProps) {
           ) : (
             <div className="flex items-center justify-center h-full w-full text-muted-foreground/30">
               <ImageIcon className="h-8 w-8" />
+            </div>
+          )}
+           {disabled && (
+            <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+              <Ban className="h-8 w-8 text-foreground" />
             </div>
           )}
         </div>
@@ -73,6 +83,7 @@ export function ProductCard({ product }: ProductCardProps) {
               size="icon"
               className="h-9 w-9 rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
               aria-label={`Añadir ${product.name} al carrito`}
+              disabled={disabled}
             >
               <Plus className="h-5 w-5" />
             </Button>

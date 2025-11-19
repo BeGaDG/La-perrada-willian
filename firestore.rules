@@ -63,6 +63,16 @@ service cloud.firestore {
       allow get, list: if true;
       allow create, update, delete: if isAdmin();
     }
+    
+    /**
+     * @description Shop settings are public-read but admin-write.
+     * This allows the client to know if the shop is open, but only admins can change the status.
+     * @path /settings/shop
+     */
+    match /settings/shop {
+        allow get: if true;
+        allow write: if isAdmin();
+    }
 
     /**
      * @description Collection to store admin user UIDs.

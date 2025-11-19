@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, Timestamp } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, orderBy, Timestamp, doc } from 'firebase/firestore';
 import { KPICard } from '@/components/admin/dashboard/kpi-card';
 import { TopProducts } from '@/components/admin/dashboard/top-products';
 import { RecentSalesChart } from '@/components/admin/dashboard/recent-sales-chart';
-import { DollarSign, ShoppingBag, TrendingUp, Wallet } from 'lucide-react';
-import type { Order } from '@/lib/types';
+import { DollarSign, ShoppingBag, TrendingUp, Wallet, Clock } from 'lucide-react';
+import type { Order, ShopSettings } from '@/lib/types';
 
 export default function AdminDashboard() {
     const firestore = useFirestore();
@@ -17,13 +17,19 @@ export default function AdminDashboard() {
         return query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'));
     }, [firestore]);
 
-    const { data: orders, isLoading } = useCollection<Order>(ordersQuery);
+    const settingsRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'settings', 'shop');
+    }, [firestore]);
+
+    const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
+    const { data: settings, isLoading: isLoadingSettings } = useDoc<ShopSettings>(settingsRef);
 
     const metrics = useMemo(() => {
-        if (!orders) return {
-            todaySales: 0,
+        if (!orders || !settings) return {
+            shiftSales: 0,
             totalSales: 0,
-            todayOrders: 0,
+            shiftOrders: 0,
             activeOrders: 0,
             avgTicket: 0,
             topProducts: [],
@@ -31,11 +37,10 @@ export default function AdminDashboard() {
             recentOrders: []
         };
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const shiftStartTime = settings.shiftStartAt ? settings.shiftStartAt.toDate() : null;
 
-        let todaySales = 0;
-        let todayOrdersCount = 0;
+        let shiftSales = 0;
+        let shiftOrdersCount = 0;
         let activeOrdersCount = 0;
         let totalRevenue = 0;
         let completedOrdersCount = 0;
@@ -50,21 +55,21 @@ export default function AdminDashboard() {
         }
 
         orders.forEach(order => {
-            // @ts-ignore
-            const orderDate = order.orderDate instanceof Timestamp ? order.orderDate.toDate() : new Date(order.orderDate);
-            const isToday = orderDate >= today;
+            const orderDate = order.orderDate.toDate();
 
-            if (['PENDIENTE', 'EN_PREPARACION', 'EN_CAMINO', 'PENDIENTE_PAGO'].includes(order.status)) {
+            if (['PENDIENTE_PAGO', 'EN_PREPARACION', 'LISTO_REPARTO'].includes(order.status)) {
                 activeOrdersCount++;
             }
+            
+            // Usamos solo pedidos completados para las métricas de ventas
+            if (['COMPLETADO'].includes(order.status)) {
+                 totalRevenue += order.totalAmount;
+                 completedOrdersCount++;
 
-            if (['ENTREGADO', 'PAGADO', 'COMPLETADO'].includes(order.status)) {
-                totalRevenue += order.totalAmount;
-                completedOrdersCount++;
-
-                if (isToday) {
-                    todaySales += order.totalAmount;
-                    todayOrdersCount++;
+                // Comprobar si el pedido pertenece al turno actual
+                if (shiftStartTime && orderDate >= shiftStartTime) {
+                    shiftSales += order.totalAmount;
+                    shiftOrdersCount++;
                 }
 
                 order.items.forEach(item => {
@@ -104,16 +109,16 @@ export default function AdminDashboard() {
         }));
 
         return {
-            todaySales,
+            shiftSales,
             totalSales: totalRevenue,
-            todayOrders: todayOrdersCount,
+            shiftOrders: shiftOrdersCount,
             activeOrders: activeOrdersCount,
             avgTicket,
             topProducts: sortedProducts,
             recentSales: recentSalesData,
             recentOrders: orders.slice(0, 5)
         };
-    }, [orders]);
+    }, [orders, settings]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('es-CO', {
@@ -124,7 +129,7 @@ export default function AdminDashboard() {
         }).format(value);
     };
 
-    if (isLoading) {
+    if (isLoadingOrders || isLoadingSettings) {
         return <div className="flex items-center justify-center h-full py-12">Cargando métricas...</div>;
     }
 
@@ -133,30 +138,28 @@ export default function AdminDashboard() {
             {/* KPI Grid */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <KPICard
-                    title="Ventas de Hoy"
-                    value={formatCurrency(metrics.todaySales)}
+                    title={settings?.isOpen ? "Ventas del Turno Actual" : "Ventas del Último Turno"}
+                    value={formatCurrency(metrics.shiftSales)}
                     icon={DollarSign}
-                    description={`${metrics.todayOrders} pedidos`}
+                    description={`${metrics.shiftOrders} pedidos este turno`}
                 />
                 <KPICard
                     title="Pedidos Activos"
                     value={metrics.activeOrders}
                     icon={ShoppingBag}
-                    description="En proceso"
-                    trend={metrics.activeOrders > 0 ? "Activos" : "Limpio"}
-                    trendUp={metrics.activeOrders === 0}
+                    description="Pendientes o en preparación"
                 />
                 <KPICard
                     title="Ticket Promedio"
                     value={formatCurrency(metrics.avgTicket)}
                     icon={TrendingUp}
-                    description="Por pedido"
+                    description="Valor por pedido (histórico)"
                 />
                 <KPICard
                     title="Ventas Totales"
                     value={formatCurrency(metrics.totalSales)}
                     icon={Wallet}
-                    description="Histórico"
+                    description="Histórico de ventas completadas"
                 />
             </div>
 
@@ -173,3 +176,5 @@ export default function AdminDashboard() {
         </div>
     );
 }
+
+    

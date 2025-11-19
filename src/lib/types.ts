@@ -46,4 +46,7 @@ export type Order = {
 export type ShopSettings = {
   id?: string;
   isOpen: boolean;
+  shiftStartAt?: Timestamp;
 };
+
+    

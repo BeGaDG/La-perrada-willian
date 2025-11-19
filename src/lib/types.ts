@@ -40,4 +40,5 @@ export type Order = {
   confirmedAt?: Timestamp;
   readyAt?: Timestamp;
   completedAt?: Timestamp;
+  notes?: string;
 };

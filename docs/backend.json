@@ -89,6 +89,10 @@
         "customerAddress": {
           "type": "string",
           "description": "Address of the customer for delivery."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Special instructions from the customer for the order."
         }
       },
       "required": [
@@ -291,4 +295,3 @@
     "reasoning": "The Firestore structure is designed to facilitate a secure and scalable ordering system for \"La Perrada de William.\" It prioritizes Authorization Independence by avoiding hierarchical `get()` calls in security rules, thus supporting atomic operations (transactions/batches). The structure clearly segregates data based on access needs and uses consistent access modeling for authorization.\n\n**Authorization Independence (Denormalization):**  The `orders` collection includes `customerId`, `customerName`, `customerPhone`, and `customerAddress`. While `customerId` could be used to reference the `/users/{customerId}` document (if customers were modeled as users with accounts), we avoid this to maintain authorization independence. Security rules can directly validate the `customerId` in the `request.resource.data` without needing to fetch the user document.  Similarly, fields like `customerName`, `customerPhone`, and `customerAddress` are denormalized directly into the `orders` collection.\n\n**Structural Segregation:** The `products` collection stores all product information, requiring only admin access for modification. The `orders` collection stores all order information, segregated from user details to simplify security rules.\n\n**Access Modeling:** Orders are created by any user, but read access is limited to the user who created the order (based on `customerId`). Admin users can update the order status. The `roles_admin` collection uses existence over content to determine admin status, further simplifying security rules.\n\n**QAPs Support:**\n*   Secure `list` operations on `products` are achieved by allowing unauthenticated reads for all products (the menu). Secure `list` operations on `orders` are achieved by only allowing authenticated users to list orders where the `customerId` matches their `uid`, ensuring users can only see their own orders."
   }
 }
-    

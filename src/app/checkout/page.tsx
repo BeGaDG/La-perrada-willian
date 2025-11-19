@@ -16,6 +16,7 @@ import React from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { useFirestore } from "@/firebase";
+import { Textarea } from "@/components/ui/textarea";
 
 
 const formatPrice = (price: number) => {
@@ -120,6 +121,7 @@ export default function CheckoutPage() {
             customerPhone: data.phone as string,
             customerAddress: data.address as string,
             paymentMethod: data.paymentMethod as string,
+            notes: data.notes as string,
             items: items.map(item => ({
                 productId: item.product.id,
                 quantity: item.quantity,
@@ -180,6 +182,10 @@ export default function CheckoutPage() {
                                         <Label htmlFor="address">Dirección de Entrega</Label>
                                         <Input id="address" name="address" required autoComplete="street-address" />
                                     </div>
+                                    <div>
+                                        <Label htmlFor="notes">Notas del Pedido (Opcional)</Label>
+                                        <Textarea id="notes" name="notes" placeholder="Ej: Sin cebolla, sin salsas, etc." />
+                                    </div>
                             </CardContent>
                         </Card>
 
@@ -188,7 +194,7 @@ export default function CheckoutPage() {
                                 <CardTitle>2. Método de Pago</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <RadioGroup form="checkout-form" name="paymentMethod" defaultValue="EFECTIVO" className="space-y-2">
+                                <RadioGroup name="paymentMethod" defaultValue="EFECTIVO" className="space-y-2">
                                     <div className="flex items-center space-x-3 p-3 rounded-md border has-[input:checked]:border-primary">
                                         <RadioGroupItem value="EFECTIVO" id="efectivo" />
                                         <Label htmlFor="efectivo" className="flex-grow cursor-pointer">Efectivo contra entrega</Label>

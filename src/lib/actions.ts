@@ -10,6 +10,7 @@ type CreateOrderPayload = {
     customerPhone: string;
     customerAddress: string;
     paymentMethod: string;
+    notes: string;
     items: {
         productId: string;
         quantity: number;

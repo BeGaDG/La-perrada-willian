@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, MoreVertical, Printer } from 'lucide-react';
+import { ChevronDown, MoreVertical, Printer, MessageSquare } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const kanbanColumns: { title: string; status: OrderStatus }[] = [
@@ -78,6 +78,12 @@ function PrintTicketDialog({ order, children }: { order: Order; children: React.
             <p>{order.customerAddress}</p>
             <p>{order.customerPhone}</p>
           </div>
+          {order.notes && (
+            <div className="py-2 border-b-2 border-dashed border-stone-400 bg-yellow-100 p-2 rounded-md">
+                <p className="font-semibold">NOTA:</p>
+                <p className='whitespace-pre-wrap'>{order.notes}</p>
+            </div>
+          )}
           <div className='py-2 space-y-1'>
             {order.items.map((item, index) => (
               <div key={index} className='grid grid-cols-[auto_1fr_auto] gap-x-2 items-start'>
@@ -142,6 +148,15 @@ function OrderCard({ order, onMoveState }: { order: Order, onMoveState: (orderId
                 <p><span className='font-semibold'>Dirección:</span> {order.customerAddress}</p>
                 <p><span className='font-semibold'>Teléfono:</span> {order.customerPhone}</p>
             </div>
+            {order.notes && (
+                <>
+                 <Separator/>
+                 <div className='pt-2'>
+                    <p className='font-semibold flex items-center gap-2'><MessageSquare className='h-4 w-4'/> Nota del cliente:</p>
+                    <p className='text-muted-foreground pl-6 whitespace-pre-wrap'>{order.notes}</p>
+                </div>
+                </>
+            )}
             <Separator/>
              <div className='space-y-1'>
                 <p className='font-semibold'>Productos:</p>
@@ -184,30 +199,9 @@ export default function AdminOrdersPage() {
   const { data: remoteOrders, isLoading } = useCollection<Order>(ordersQuery);
 
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
-  const notifiedOrderIds = useRef(new Set());
-  const audioRef = useRef<HTMLAudioElement>(null);
 
-
-  // Central notification logic is now in AdminLayout
   useEffect(() => {
     if (remoteOrders) {
-        const newOrders = remoteOrders.filter(
-            order => order.status === 'PENDIENTE_PAGO' && !notifiedOrderIds.current.has(order.id)
-        );
-
-        if (newOrders.length > 0) {
-            newOrders.forEach(order => {
-                if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-                     new Notification("¡Nuevo Pedido!", {
-                        body: `Pedido de ${order.customerName} por ${formatPrice(order.totalAmount)}.`,
-                        icon: "/favicon.ico",
-                        tag: order.id,
-                    });
-                    audioRef.current?.play().catch(e => console.error("Error playing sound:", e));
-                }
-                notifiedOrderIds.current.add(order.id);
-            });
-        }
         setLocalOrders(remoteOrders);
     }
   }, [remoteOrders]);
@@ -250,8 +244,6 @@ export default function AdminOrdersPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8 font-headline">Panel de Pedidos</h1>
-      {/* Audio element for notification sound */}
-      <audio ref={audioRef} src="/notification.mp3" preload="auto" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kanbanColumns.map(col => (
           <div key={col.status} className="bg-muted/50 rounded-lg p-4">

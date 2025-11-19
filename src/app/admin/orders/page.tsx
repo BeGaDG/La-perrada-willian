@@ -184,7 +184,6 @@ export default function AdminOrdersPage() {
   const { data: remoteOrders, isLoading } = useCollection<Order>(ordersQuery);
 
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const notifiedOrderIds = useRef(new Set());
 
   // Request notification permission on mount
@@ -203,8 +202,6 @@ export default function AdminOrdersPage() {
 
       if (newOrders.length > 0) {
         newOrders.forEach(order => {
-          // Play sound
-          audioRef.current?.play().catch(e => console.error("Error playing sound:", e));
           // Show notification
           if (Notification.permission === "granted") {
             new Notification("¡Nuevo Pedido!", {
@@ -257,7 +254,6 @@ export default function AdminOrdersPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8 font-headline">Panel de Pedidos</h1>
-      <audio ref={audioRef} src="/notification.mp3" preload="auto"></audio>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kanbanColumns.map(col => (
           <div key={col.status} className="bg-muted/50 rounded-lg p-4">

@@ -1,40 +1,31 @@
-import * as admin from 'firebase-admin';
-import { firebaseConfig } from '@/firebase/config';
-import dotenv from 'dotenv';
+'use server';
 
-// Cargar las variables de entorno desde .env.local
-dotenv.config({ path: '.env.local' });
+import * as admin from 'firebase-admin';
 
 /**
  * Returns a ready-to-use, initialized instance of the Admin Firestore SDK.
- * This function handles lazy initialization to ensure `initializeApp` is called only once.
+ * This function handles lazy initialization to ensure `initializeApp` is called only once,
+ * relying on Firebase's automatic credential detection in the hosting environment.
  */
 export function getAdminFirestore() {
+  // Check if the app is already initialized to prevent re-initialization errors.
   if (!admin.apps.length) {
-    // Cuando se ejecuta en el entorno de desarrollo local, las variables de entorno
-    // que configuramos en .env.local estarán disponibles gracias a `dotenv`.
-    if (process.env.FIREBASE_PRIVATE_KEY) {
-      // Formatear la clave privada, reemplazando los escapes de nueva línea.
-      const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
-      
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: firebaseConfig.projectId,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: privateKey,
-        }),
-      });
-    } else {
-      // Si FIREBASE_PRIVATE_KEY no está definida, se asume que estamos en un
-      // entorno de producción (como App Hosting) que provee las credenciales
-      // automáticamente. `initializeApp()` sin argumentos las usará.
-      try {
-        admin.initializeApp();
-      } catch (e: any) {
-        console.error("Firebase Admin SDK auto-initialization failed. Ensure service account credentials are set in your production environment.", e);
-      }
+    try {
+      // In a hosted Firebase environment (like App Hosting or Cloud Functions),
+      // calling initializeApp() without arguments will automatically use the
+      // project's default service account credentials.
+      admin.initializeApp();
+    } catch (e: any) {
+      // This catch block is a safeguard. If initialization fails, it will log a
+      // descriptive error message, which is crucial for debugging.
+      console.error(
+        'Firebase Admin SDK initialization failed. This can happen if the environment is not configured with the correct Google Cloud service account credentials. In a local dev environment, you might need to set the GOOGLE_APPLICATION_CREDENTIALS environment variable. In a hosted Firebase environment, this should be automatic.',
+        e
+      );
+      // Re-throwing the error to ensure the calling function knows initialization failed.
+      throw new Error('Could not initialize Firebase Admin SDK.');
     }
   }
-  // Devolver la instancia de Firestore inicializada de la app por defecto.
+  // Return the initialized Firestore instance from the default app.
   return admin.firestore();
 }

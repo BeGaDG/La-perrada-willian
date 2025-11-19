@@ -24,18 +24,16 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows users to create orders and only read/write their own orders.
-     * @path /orders/{orderId}
-     * @allow (create) Authenticated user creates a new order with customerId matching their UID.
-     * @allow (get, list) Authenticated user reads their own order.
-     * @deny (get, list) Authenticated user attempts to read another user's order.
-     * @deny (update, delete) Non-owner attempts to update or delete the order.
-     * @principle Enforces user-ownership for orders based on customerId and authenticated user ID.
+     * @description Rules for the orders collection.
+     * Admins can list all orders for the admin panel.
+     * Customers can create orders.
+     * Individual documents can be read/updated by admins.
      */
     match /orders/{orderId} {
-      allow create: if true;
-      allow get, list, update: if isAdmin();
-      allow delete: if false;
+      allow list: if isAdmin(); // Rule for querying the collection
+      allow create: if true; // Anyone can create an order
+      allow get, update: if isAdmin(); // Admin can get or update a single order
+      allow delete: if false; // No one can delete orders
     }
 
     /**
@@ -106,3 +104,4 @@ service firebase.storage {
     }
   }
 }
+

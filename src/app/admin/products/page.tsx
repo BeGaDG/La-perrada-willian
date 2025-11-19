@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from "react";
-import { collection, doc, deleteDoc } from "firebase/firestore";
+import { collection } from "firebase/firestore";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import {
   Table,
@@ -24,81 +24,19 @@ import {
 import Image from "next/image";
 import { ProductForm } from "./product-form";
 import type { Product, Category } from "@/lib/types";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteProductDialog } from "@/components/admin/products/delete-product-dialog";
 
-
-function DeleteProductDialog({ productId }: { productId: string }) {
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
-
-  const handleDelete = async () => {
-    if (!firestore) return;
-    try {
-      const productRef = doc(firestore, 'products', productId);
-      await deleteDoc(productRef);
-      toast({
-        title: 'Producto eliminado',
-        description: 'El producto ha sido eliminado con éxito.'
-      });
-    } catch (error) {
-       toast({
-        variant: "destructive",
-        title: 'Error',
-        description: 'No se pudo eliminar el producto.',
-      });
-      console.error("Error deleting product: ", error);
-    } finally {
-        setIsAlertOpen(false);
-    }
-  };
-
-  return (
-    <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-      <AlertDialogTrigger asChild>
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-          Eliminar
-        </DropdownMenuItem>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Esta acción no se puede deshacer. Esto eliminará permanentemente el producto de la base de datos.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-            Sí, eliminar
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
 
 const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(price);
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(price);
 }
 
 export default function AdminProductsPage() {
@@ -127,61 +65,61 @@ export default function AdminProductsPage() {
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const paginatedProducts = useMemo(() => {
     return filteredProducts.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
     );
   }, [filteredProducts, currentPage]);
 
 
   return (
     <div className="space-y-8">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-            <h1 className="text-3xl font-bold font-headline">Gestión de Productos</h1>
-            <ProductForm>
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Producto
-              </Button>
-            </ProductForm>
-        </div>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h1 className="text-3xl font-bold font-headline">Gestión de Productos</h1>
+        <ProductForm>
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Añadir Producto
+          </Button>
+        </ProductForm>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Buscar por nombre..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
-              <Select value={categoryFilter} onValueChange={(value) => {
-                setCategoryFilter(value)
-                setCurrentPage(1);
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingCategories ? "Cargando..." : "Filtrar por categoría"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las categorías</SelectItem>
-                  {categories?.map(category => (
-                    <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
-          </CardContent>
-        </Card>
+            <Select value={categoryFilter} onValueChange={(value) => {
+              setCategoryFilter(value)
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder={isLoadingCategories ? "Cargando..." : "Filtrar por categoría"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las categorías</SelectItem>
+                {categories?.map(category => (
+                  <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
-       <div className="rounded-lg border">
+      <div className="rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -204,28 +142,28 @@ export default function AdminProductsPage() {
               </TableRow>
             )}
             {!(isLoadingProducts || isLoadingCategories) && paginatedProducts.length === 0 && (
-                <TableRow>
-                    <TableCell colSpan={6} className="text-center h-24">
-                      {products && products.length > 0 ? "No se encontraron productos con los filtros aplicados." : "No hay productos. ¡Añade uno nuevo!"}
-                    </TableCell>
-                </TableRow>
+              <TableRow>
+                <TableCell colSpan={6} className="text-center h-24">
+                  {products && products.length > 0 ? "No se encontraron productos con los filtros aplicados." : "No hay productos. ¡Añade uno nuevo!"}
+                </TableCell>
+              </TableRow>
             )}
             {paginatedProducts?.map((product) => (
               <TableRow key={product.id}>
-                 <TableCell className="hidden sm:table-cell">
-                    {product.imageUrl ? (
-                        <Image
-                            alt={product.name}
-                            className="aspect-square rounded-md object-cover"
-                            height="64"
-                            src={product.imageUrl}
-                            width="64"
-                        />
-                    ) : (
-                        <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
-                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                    )}
+                <TableCell className="hidden sm:table-cell">
+                  {product.imageUrl ? (
+                    <Image
+                      alt={product.name}
+                      className="aspect-square rounded-md object-cover"
+                      height="64"
+                      src={product.imageUrl}
+                      width="64"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
+                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>
@@ -248,7 +186,7 @@ export default function AdminProductsPage() {
                       <ProductForm productToEdit={product}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Editar</DropdownMenuItem>
                       </ProductForm>
-                       <DeleteProductDialog productId={product.id} />
+                      <DeleteProductDialog productId={product.id} />
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -256,32 +194,32 @@ export default function AdminProductsPage() {
             ))}
           </TableBody>
         </Table>
-       </div>
-       {totalPages > 1 && (
+      </div>
+      {totalPages > 1 && (
         <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-                Página {currentPage} de {totalPages}
-            </span>
-            <div className="flex items-center gap-2">
-                <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                >
-                    Anterior
-                </Button>
-                <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                >
-                    Siguiente
-                </Button>
-            </div>
+          <span className="text-sm text-muted-foreground">
+            Página {currentPage} de {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente
+            </Button>
+          </div>
         </div>
-       )}
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Plus, ImageIcon } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { useCart } from '@/components/cart-provider';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
@@ -20,6 +21,7 @@ export function ProductCard({ product }: ProductCardProps) {
     addItem(product);
     toast({
       description: `${product.name} añadido al carrito.`,
+      duration: 2000,
     });
   };
 
@@ -31,31 +33,50 @@ export function ProductCard({ product }: ProductCardProps) {
   }).format(product.price);
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <div className="flex items-center gap-4">
-        <div className="aspect-square w-24 flex-shrink-0 relative bg-muted flex items-center justify-center rounded-l-lg">
-           {product.imageUrl ? (
+    <Card className="group overflow-hidden border-0 shadow-sm bg-card hover:bg-accent/5 transition-colors duration-200 rounded-2xl">
+      <div className="flex p-3 gap-4 h-full">
+        {/* Imagen del producto */}
+        <div className="relative w-28 h-28 md:w-32 md:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-muted/50 shadow-inner">
+          {product.imageUrl ? (
             <Image
-                src={product.imageUrl}
-                alt={product.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 30vw, (max-width: 1024px) 30vw, 25vw"
-                data-ai-hint={product.imageHint}
+              src={product.imageUrl}
+              alt={product.name}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 768px) 120px, 150px"
+              data-ai-hint={product.imageHint}
             />
           ) : (
-            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+            <div className="flex items-center justify-center h-full w-full text-muted-foreground/30">
+              <ImageIcon className="h-8 w-8" />
+            </div>
           )}
         </div>
 
-        <div className="flex-grow py-3 pr-3">
-            <h3 className="font-semibold text-base leading-tight line-clamp-2 mb-1">{product.name}</h3>
-            <div className='flex items-end justify-between'>
-                <p className="text-base font-bold text-primary mt-1">{formattedPrice}</p>
-                <Button onClick={handleAddToCart} size="icon" className="h-8 w-8 flex-shrink-0" aria-label={`Añadir ${product.name} al carrito`}>
-                    <Plus className="h-5 w-5" />
-                </Button>
-            </div>
+        {/* Contenido */}
+        <div className="flex flex-col flex-grow justify-between py-0.5">
+          <div>
+            <h3 className="font-bold text-base leading-tight text-foreground mb-1.5 line-clamp-2">
+              {product.name}
+            </h3>
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+              {product.description || "Delicioso y preparado al instante."}
+            </p>
+          </div>
+
+          <div className='flex items-center justify-between mt-3'>
+            <p className="text-base font-extrabold text-primary tabular-nums">
+              {formattedPrice}
+            </p>
+            <Button
+              onClick={handleAddToCart}
+              size="icon"
+              className="h-9 w-9 rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
+              aria-label={`Añadir ${product.name} al carrito`}
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </Card>

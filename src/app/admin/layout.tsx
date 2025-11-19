@@ -2,132 +2,24 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Package, ScrollText, Home, LogOut, Tags, Bell } from "lucide-react"
-
-import { cn } from "@/lib/utils"
+import { Package, ScrollText, LogOut, Tags, LayoutDashboard, Bell, Search, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { Input } from "@/components/ui/input"
+import { useUser, useAuth } from "@/firebase"
 import { useEffect, useState } from "react"
-import { Separator } from "@/components/ui/separator"
-import { useToast } from "@/hooks/use-toast"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { collection, query, where } from "firebase/firestore"
-import type { Order } from "@/lib/types"
-import { Badge } from "@/components/ui/badge"
-
-
-function NotificationBell() {
-    const firestore = useFirestore();
-    const router = useRouter();
-    
-    // 1. Listen for new orders in real-time
-    const newOrdersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'orders'), where('status', '==', 'PENDIENTE_PAGO'));
-    }, [firestore]);
-    const { data: newOrders } = useCollection<Order>(newOrdersQuery);
-
-    const [permission, setPermission] = useState('default');
-    const { toast } = useToast();
-
-    useEffect(() => {
-        // Only run on client
-        if ('Notification' in window) {
-            setPermission(Notification.permission);
-        }
-    }, []);
-
-    const requestPermission = () => {
-        if (!('Notification' in window)) {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Este navegador no soporta notificaciones de escritorio.',
-            });
-            return;
-        }
-
-        Notification.requestPermission().then((perm) => {
-            setPermission(perm);
-            if (perm === 'granted') {
-                toast({
-                    title: '¡Permiso concedido!',
-                    description: 'Recibirás notificaciones de nuevos pedidos.',
-                });
-                 new Notification('Notificaciones Activadas', {
-                    body: '¡Todo listo para recibir pedidos!',
-                    icon: '/favicon.ico',
-                });
-            } else {
-                 toast({
-                    variant: 'destructive',
-                    title: 'Permiso denegado',
-                    description: 'No recibirás notificaciones. Puedes cambiarlo en la configuración de tu navegador.',
-                });
-            }
-        });
-    };
-    
-    const hasNewOrders = newOrders && newOrders.length > 0;
-    const requiresPermission = permission !== 'granted';
-
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                 <Button variant="ghost" size="icon" className="relative" onClick={() => { if(hasNewOrders) router.push('/admin/orders')}}>
-                    <Bell className="h-5 w-5" />
-                    {(hasNewOrders || requiresPermission) && (
-                        <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center">
-                            {hasNewOrders ? (
-                                <Badge variant="destructive" className="absolute -top-1 -right-2 h-5 w-5 justify-center p-0">{newOrders.length}</Badge>
-                            ) : requiresPermission ? (
-                                <>
-                                 <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-orange-400 opacity-75 top-1 right-1"></span>
-                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500 top-1 right-1"></span>
-                                </>
-                            ) : null}
-                        </span>
-                    )}
-                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>
-                    {hasNewOrders ? `Tienes ${newOrders.length} pedido${newOrders.length > 1 ? 's' : ''} nuevo${newOrders.length > 1 ? 's' : ''}` : 'No hay pedidos nuevos'}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {requiresPermission ? (
-                     <DropdownMenuItem onSelect={requestPermission}>
-                        Activar Notificaciones de Escritorio
-                    </DropdownMenuItem>
-                ) : (
-                    <DropdownMenuItem disabled>
-                        Las notificaciones están activas
-                    </DropdownMenuItem>
-                )}
-                 <DropdownMenuItem onSelect={() => router.push('/admin/orders')}>
-                    Ver todos los pedidos
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
-}
+import { cn } from "@/lib/utils"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export default function AdminLayout({
-  children,
+    children,
 }: {
-  children: React.ReactNode
+    children: React.ReactNode
 }) {
     const pathname = usePathname();
     const { user, isUserLoading } = useUser();
     const auth = useAuth();
     const router = useRouter();
+    const [open, setOpen] = useState(false);
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -136,9 +28,9 @@ export default function AdminLayout({
     }, [user, isUserLoading, router]);
 
     const handleSignOut = async () => {
-      if (!auth) return;
-      await auth.signOut();
-      router.push('/login');
+        if (!auth) return;
+        await auth.signOut();
+        router.push('/login');
     }
 
     if (isUserLoading || !user) {
@@ -149,61 +41,132 @@ export default function AdminLayout({
         );
     }
 
-  return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-       <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex">
-         <nav className="flex flex-col gap-2 p-4">
-             <Link href="/" className="flex items-center gap-2 font-semibold mb-4">
-                <span className="">La Perrada de William</span>
-            </Link>
-            <Button 
-                variant={pathname.startsWith("/admin/orders") ? 'default' : 'ghost'} 
-                className="w-full justify-start"
-                asChild
-            >
-                <Link href="/admin/orders">
-                    <ScrollText className="mr-2 h-4 w-4" />
-                    Pedidos
-                </Link>
-            </Button>
-             <Button 
-                variant={pathname.startsWith("/admin/products") ? 'default' : 'ghost'} 
-                className="w-full justify-start"
-                asChild
-            >
-                <Link href="/admin/products">
-                    <Package className="mr-2 h-4 w-4" />
-                    Productos
-                </Link>
-            </Button>
-             <Button 
-                variant={pathname.startsWith("/admin/categories") ? 'default' : 'ghost'} 
-                className="w-full justify-start"
-                asChild
-            >
-                <Link href="/admin/categories">
-                    <Tags className="mr-2 h-4 w-4" />
-                    Categorías
-                </Link>
-            </Button>
-          </nav>
-          <div className="mt-auto p-4">
-            <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Sesión
-            </Button>
-          </div>
-       </aside>
-       <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-64">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-            <div className="ml-auto flex items-center gap-2">
-                <NotificationBell />
+    const navItems = [
+        { href: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
+        { href: "/admin/orders", icon: ScrollText, label: "Pedidos" },
+        { href: "/admin/products", icon: Package, label: "Productos" },
+        { href: "/admin/categories", icon: Tags, label: "Categorías" },
+    ];
+
+    const NavLinks = () => (
+        <>
+            {navItems.map((item) => {
+                const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+                return (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className={cn(
+                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                            isActive
+                                ? "bg-slate-900 text-white"
+                                : "text-slate-600 hover:bg-slate-100"
+                        )}
+                    >
+                        <item.icon className="h-5 w-5" />
+                        {item.label}
+                    </Link>
+                );
+            })}
+        </>
+    );
+
+    return (
+        <div className="min-h-screen bg-slate-50">
+            {/* Mobile Header */}
+            <header className="lg:hidden sticky top-0 z-50 w-full border-b bg-white">
+                <div className="flex h-16 items-center justify-between px-4">
+                    <Sheet open={open} onOpenChange={setOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <Menu className="h-5 w-5" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="left" className="w-64 p-0">
+                            <div className="flex flex-col h-full">
+                                <div className="p-4 border-b">
+                                    <h2 className="font-bold text-lg">La Perrada</h2>
+                                </div>
+                                <nav className="flex-1 p-4 space-y-2">
+                                    <NavLinks />
+                                </nav>
+                                <div className="p-4 border-t">
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        onClick={handleSignOut}
+                                    >
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        Cerrar Sesión
+                                    </Button>
+                                </div>
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+
+                    <h1 className="font-bold text-lg">Dashboard</h1>
+
+                    <Button variant="ghost" size="icon" className="relative">
+                        <Bell className="h-5 w-5" />
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    </Button>
+                </div>
+            </header>
+
+            <div className="flex">
+                {/* Desktop Sidebar */}
+                <aside className="hidden lg:flex flex-col w-64 border-r bg-white h-screen sticky top-0">
+                    <div className="p-6 border-b">
+                        <h2 className="font-bold text-xl">La Perrada</h2>
+                        <p className="text-sm text-slate-500">Admin Panel</p>
+                    </div>
+
+                    <nav className="flex-1 p-4 space-y-2">
+                        <NavLinks />
+                    </nav>
+
+                    <div className="p-4 border-t">
+                        <Button
+                            variant="ghost"
+                            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={handleSignOut}
+                        >
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Cerrar Sesión
+                        </Button>
+                    </div>
+                </aside>
+
+                {/* Main Content */}
+                <div className="flex-1">
+                    {/* Desktop Header */}
+                    <header className="hidden lg:block sticky top-0 z-40 border-b bg-white">
+                        <div className="flex h-16 items-center justify-between px-6">
+                            <div className="flex-1 max-w-md">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                    <Input
+                                        placeholder="Buscar..."
+                                        className="pl-9 bg-slate-50 border-slate-200"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <Button variant="ghost" size="icon" className="relative">
+                                    <Bell className="h-5 w-5" />
+                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                                </Button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="p-4 lg:p-6">
+                        {children}
+                    </main>
+                </div>
             </div>
-        </header>
-         <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-            {children}
-        </main>
-       </div>
-    </div>
-  )
+        </div>
+    )
 }

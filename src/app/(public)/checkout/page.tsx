@@ -45,7 +45,7 @@ function OrderSummary() {
                             </CardDescription>
                         </div>
                         <div className="flex items-center gap-4">
-                             <span className="font-bold text-lg whitespace-nowrap lg:hidden">
+                            <span className="font-bold text-lg whitespace-nowrap lg:hidden">
                                 {formatPrice(totalPrice)}
                             </span>
                             <ChevronDown className={cn("h-5 w-5 transition-transform", isOpen && "rotate-180")} />
@@ -80,15 +80,15 @@ function OrderSummary() {
                         </div>
                     </CardContent>
                 </CollapsibleContent>
-                 <div className="hidden lg:block">
-                     <Separator />
-                     <CardFooter className="pt-6">
+                <div className="hidden lg:block">
+                    <Separator />
+                    <CardFooter className="pt-6">
                         <div className="flex justify-between font-bold text-lg w-full">
                             <span>Total</span>
                             <span>{formatPrice(totalPrice)}</span>
                         </div>
-                     </CardFooter>
-                 </div>
+                    </CardFooter>
+                </div>
             </Card>
         </Collapsible>
     );
@@ -155,9 +155,9 @@ export default function CheckoutPage() {
     return (
         <div className="container py-12 md:py-16">
             <h1 className="text-3xl font-bold mb-8 font-headline text-center">Finalizar Compra</h1>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 relative pb-24 lg:pb-0">
-                
+
                 {/* Columna Izquierda: Resumen en móvil y Formulario en desktop */}
                 <div className="lg:hidden">
                     <OrderSummary />
@@ -170,22 +170,22 @@ export default function CheckoutPage() {
                                 <CardTitle>1. Información de Entrega</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                    <div>
-                                        <Label htmlFor="name">Nombre Completo</Label>
-                                        <Input id="name" name="name" required autoComplete="name" />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="phone">Teléfono de Contacto</Label>
-                                        <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="address">Dirección de Entrega</Label>
-                                        <Input id="address" name="address" required autoComplete="street-address" />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="notes">Notas del Pedido (Opcional)</Label>
-                                        <Textarea id="notes" name="notes" placeholder="Ej: Sin cebolla, sin salsas, etc." />
-                                    </div>
+                                <div>
+                                    <Label htmlFor="name">Nombre Completo</Label>
+                                    <Input id="name" name="name" required autoComplete="name" />
+                                </div>
+                                <div>
+                                    <Label htmlFor="phone">Teléfono de Contacto</Label>
+                                    <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
+                                </div>
+                                <div>
+                                    <Label htmlFor="address">Dirección de Entrega</Label>
+                                    <Input id="address" name="address" required autoComplete="street-address" />
+                                </div>
+                                <div>
+                                    <Label htmlFor="notes">Notas del Pedido y Detalles de Dirección (Opcional)</Label>
+                                    <Textarea id="notes" name="notes" placeholder="Ej: Casa de reja negra, al lado del colegio. Sin cebolla en el perro, salsas aparte." />
+                                </div>
                             </CardContent>
                         </Card>
 
@@ -208,28 +208,28 @@ export default function CheckoutPage() {
                         </Card>
                     </form>
                 </div>
-                
+
                 {/* Columna Derecha: Resumen en Desktop */}
                 <div className="hidden lg:block lg:sticky top-24 self-start">
                     <OrderSummary />
                 </div>
             </div>
 
-             {/* Footer Fijo en Móvil */}
+            {/* Footer Fijo en Móvil */}
             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex justify-between items-center">
                 <div className="font-bold text-lg">
                     <span>Total: </span>
                     <span>{formatPrice(totalPrice)}</span>
                 </div>
                 <Button form="checkout-form" type="submit" size="lg" disabled={isPending}>
-                     {isPending ? "Finalizando..." : "Finalizar Pedido"}
+                    {isPending ? "Finalizando..." : "Finalizar Pedido"}
                 </Button>
             </div>
-            
+
             {/* Botón de envío para Desktop */}
             <div className="hidden lg:flex justify-end mt-8">
-                 <Button form="checkout-form" type="submit" size="lg" className="w-full lg:w-auto lg:max-w-xs" disabled={isPending}>
-                     {isPending ? "Finalizando pedido..." : "Finalizar Pedido"}
+                <Button form="checkout-form" type="submit" size="lg" className="w-full lg:w-auto lg:max-w-xs" disabled={isPending}>
+                    {isPending ? "Finalizando pedido..." : "Finalizar Pedido"}
                 </Button>
             </div>
         </div>

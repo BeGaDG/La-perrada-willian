@@ -7,22 +7,35 @@ import { firebaseConfig } from '@/firebase/config';
  */
 export function getAdminFirestore() {
   if (!admin.apps.length) {
-    try {
-      // Intenta inicializar con credenciales de entorno (para producción en App Hosting)
-      admin.initializeApp();
-    } catch (e) {
-      // Si falla (común en desarrollo local), usa la configuración del cliente como fallback.
-      // Esto no es ideal para producción, pero asegura que el desarrollo no se bloquee.
-      console.warn("Firebase Admin SDK auto-initialization failed. Falling back to client-side config. Ensure service account credentials are set in production.", e);
+    // Cuando se ejecuta en el entorno de desarrollo local, la variable de entorno
+    // FIREBASE_PRIVATE_KEY que configuramos en .env.local estará disponible.
+    if (process.env.FIREBASE_PRIVATE_KEY) {
+      // Formatear la clave privada, reemplazando los escapes de nueva línea.
+      const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+      
+      // Obtener el email del cliente de las variables de entorno o construirlo.
+      // El service account email es necesario junto con la clave privada.
+      const clientEmail = process.env.FIREBASE_CLIENT_EMAIL || `firebase-adminsdk-fbsvc@${firebaseConfig.projectId}.iam.gserviceaccount.com`;
+
       admin.initializeApp({
         credential: admin.credential.cert({
-            projectId: firebaseConfig.projectId,
-            clientEmail: `firebase-adminsdk-adminsdk@${firebaseConfig.projectId}.iam.gserviceaccount.com`,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY || "",
+          projectId: firebaseConfig.projectId,
+          clientEmail: clientEmail,
+          privateKey: privateKey,
         }),
       });
+    } else {
+      // Si FIREBASE_PRIVATE_KEY no está definida, se asume que estamos en un
+      // entorno de producción (como App Hosting) que provee las credenciales
+      // automáticamente a través de variables de entorno estándar.
+      // `initializeApp()` sin argumentos las usará.
+      try {
+        admin.initializeApp();
+      } catch (e: any) {
+        console.error("Firebase Admin SDK auto-initialization failed. Ensure service account credentials are set in your production environment or FIREBASE_PRIVATE_KEY is set locally.", e);
+      }
     }
   }
-  // Return the initialized Firestore instance from the default app.
+  // Devolver la instancia de Firestore inicializada de la app por defecto.
   return admin.firestore();
 }

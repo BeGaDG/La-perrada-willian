@@ -6,7 +6,7 @@ import { Package, ScrollText, Home, LogOut, Tags, Bell } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useUser, useAuth } from "@/firebase"
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { useEffect, useState } from "react"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
@@ -18,13 +18,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { collection, query, where } from "firebase/firestore"
+import type { Order } from "@/lib/types"
+import { Badge } from "@/components/ui/badge"
 
 
 function NotificationBell() {
+    const firestore = useFirestore();
+    const router = useRouter();
+    
+    // 1. Listen for new orders in real-time
+    const newOrdersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'orders'), where('status', '==', 'PENDIENTE_PAGO'));
+    }, [firestore]);
+    const { data: newOrders } = useCollection<Order>(newOrdersQuery);
+
     const [permission, setPermission] = useState('default');
     const { toast } = useToast();
 
     useEffect(() => {
+        // Only run on client
         if ('Notification' in window) {
             setPermission(Notification.permission);
         }
@@ -47,6 +61,10 @@ function NotificationBell() {
                     title: '¡Permiso concedido!',
                     description: 'Recibirás notificaciones de nuevos pedidos.',
                 });
+                 new Notification('Notificaciones Activadas', {
+                    body: '¡Todo listo para recibir pedidos!',
+                    icon: '/favicon.ico',
+                });
             } else {
                  toast({
                     variant: 'destructive',
@@ -56,46 +74,46 @@ function NotificationBell() {
             }
         });
     };
-
-    const sendTestNotification = () => {
-        if (permission === 'granted') {
-            new Notification('Notificación de Prueba', {
-                body: '¡Las notificaciones están funcionando correctamente!',
-                icon: '/favicon.ico',
-            });
-        } else {
-            requestPermission();
-        }
-    };
     
+    const hasNewOrders = newOrders && newOrders.length > 0;
+    const requiresPermission = permission !== 'granted';
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                 <Button variant="ghost" size="icon" className="relative">
+                 <Button variant="ghost" size="icon" className="relative" onClick={() => { if(hasNewOrders) router.push('/admin/orders')}}>
                     <Bell className="h-5 w-5" />
-                    {permission !== 'granted' && (
-                        <span className="absolute top-2 right-2 flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                    {(hasNewOrders || requiresPermission) && (
+                        <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center">
+                            {hasNewOrders ? (
+                                <Badge variant="destructive" className="absolute -top-1 -right-2 h-5 w-5 justify-center p-0">{newOrders.length}</Badge>
+                            ) : requiresPermission ? (
+                                <>
+                                 <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-orange-400 opacity-75 top-1 right-1"></span>
+                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500 top-1 right-1"></span>
+                                </>
+                            ) : null}
                         </span>
                     )}
                  </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>
+                    {hasNewOrders ? `Tienes ${newOrders.length} pedido${newOrders.length > 1 ? 's' : ''} nuevo${newOrders.length > 1 ? 's' : ''}` : 'No hay pedidos nuevos'}
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {permission !== 'granted' ? (
+                {requiresPermission ? (
                      <DropdownMenuItem onSelect={requestPermission}>
-                        Activar Notificaciones
+                        Activar Notificaciones de Escritorio
                     </DropdownMenuItem>
                 ) : (
-                    <>
-                        <DropdownMenuItem disabled>Permiso Concedido</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={sendTestNotification}>
-                            Enviar Notificación de Prueba
-                        </DropdownMenuItem>
-                    </>
+                    <DropdownMenuItem disabled>
+                        Las notificaciones están activas
+                    </DropdownMenuItem>
                 )}
+                 <DropdownMenuItem onSelect={() => router.push('/admin/orders')}>
+                    Ver todos los pedidos
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     );

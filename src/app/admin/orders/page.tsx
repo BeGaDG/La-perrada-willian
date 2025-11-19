@@ -188,38 +188,27 @@ export default function AdminOrdersPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
 
 
-  // Request notification permission on mount
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-      Notification.requestPermission();
-    }
-  }, []);
-
+  // Central notification logic is now in AdminLayout
   useEffect(() => {
     if (remoteOrders) {
-      // Check for new orders that haven't been notified yet
-      const newOrders = remoteOrders.filter(
-        order => order.status === 'PENDIENTE_PAGO' && !notifiedOrderIds.current.has(order.id)
-      );
+        const newOrders = remoteOrders.filter(
+            order => order.status === 'PENDIENTE_PAGO' && !notifiedOrderIds.current.has(order.id)
+        );
 
-      if (newOrders.length > 0) {
-        newOrders.forEach(order => {
-          // Show notification
-          if (Notification.permission === "granted") {
-            new Notification("¡Nuevo Pedido!", {
-              body: `Pedido de ${order.customerName} por ${formatPrice(order.totalAmount)}.`,
-              icon: "/favicon.ico",
-              tag: order.id, // Use order ID as tag to prevent multiple notifications for the same order
+        if (newOrders.length > 0) {
+            newOrders.forEach(order => {
+                if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+                     new Notification("¡Nuevo Pedido!", {
+                        body: `Pedido de ${order.customerName} por ${formatPrice(order.totalAmount)}.`,
+                        icon: "/favicon.ico",
+                        tag: order.id,
+                    });
+                    audioRef.current?.play().catch(e => console.error("Error playing sound:", e));
+                }
+                notifiedOrderIds.current.add(order.id);
             });
-
-             // Play sound
-            audioRef.current?.play().catch(e => console.error("Error playing sound:", e));
-          }
-          notifiedOrderIds.current.add(order.id);
-        });
-      }
-
-      setLocalOrders(remoteOrders);
+        }
+        setLocalOrders(remoteOrders);
     }
   }, [remoteOrders]);
 

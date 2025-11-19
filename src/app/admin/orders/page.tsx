@@ -220,18 +220,18 @@ export default function AdminOrdersPage() {
     }
   }, [remoteOrders]);
 
-  const handleMoveState = (orderId: string, newStatus: OrderStatus) => {
+  const handleMoveState = async (orderId: string, newStatus: OrderStatus) => {
     // Optimistic UI update
     setLocalOrders(prevOrders => 
       prevOrders.map(o => o.id === orderId ? { ...o, status: newStatus } : o)
     );
 
-    // try {
-    //   updateOrderStatus(orderId, newStatus);
-    // } catch (e) {
-    //   // Revert on error
-    //   setLocalOrders(remoteOrders || []);
-    // }
+    try {
+      await updateOrderStatus(orderId, newStatus);
+    } catch (e) {
+      // Revert on error
+      setLocalOrders(remoteOrders || []);
+    }
   };
 
   const ordersByStatus = useMemo(() => {

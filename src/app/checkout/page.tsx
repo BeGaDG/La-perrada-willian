@@ -128,21 +128,21 @@ export default function CheckoutPage() {
         }
 
         startTransition(async () => {
-            try {
-                await createOrder(orderPayload);
+            // try {
+            //     await createOrder(orderPayload);
                 toast({
                     title: "¡Pedido Realizado!",
                     description: "Tu pedido ha sido creado y está pendiente de pago.",
                 });
                 clearCart();
                 router.push(`/confirmation?paymentMethod=${orderPayload.paymentMethod}`);
-            } catch (error) {
-                toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "No se pudo crear el pedido. Intenta de nuevo.",
-                });
-            }
+            // } catch (error) {
+            //     toast({
+            //         variant: "destructive",
+            //         title: "Error",
+            //         description: "No se pudo crear el pedido. Intenta de nuevo.",
+            //     });
+            // }
         });
     };
 

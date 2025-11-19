@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { type Order, type OrderStatus } from '@/lib/types';
@@ -79,7 +79,7 @@ function PrintTicketDialog({ order, children }: { order: Order; children: React.
             <p>{order.customerPhone}</p>
           </div>
           <div className='py-2 space-y-1'>
-             {order.items.map((item, index) => (
+            {order.items.map((item, index) => (
               <div key={index} className='grid grid-cols-[auto_1fr_auto] gap-x-2 items-start'>
                 <span>{item.quantity}x</span>
                 <span className='truncate'>{item.productName}</span>
@@ -184,9 +184,38 @@ export default function AdminOrdersPage() {
   const { data: remoteOrders, isLoading } = useCollection<Order>(ordersQuery);
 
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const notifiedOrderIds = useRef(new Set());
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   useEffect(() => {
     if (remoteOrders) {
+      // Check for new orders that haven't been notified yet
+      const newOrders = remoteOrders.filter(
+        order => order.status === 'PENDIENTE_PAGO' && !notifiedOrderIds.current.has(order.id)
+      );
+
+      if (newOrders.length > 0) {
+        newOrders.forEach(order => {
+          // Play sound
+          audioRef.current?.play().catch(e => console.error("Error playing sound:", e));
+          // Show notification
+          if (Notification.permission === "granted") {
+            new Notification("¡Nuevo Pedido!", {
+              body: `Pedido de ${order.customerName} por ${formatPrice(order.totalAmount)}.`,
+              icon: "/favicon.ico", // Optional: add an icon
+            });
+          }
+          notifiedOrderIds.current.add(order.id);
+        });
+      }
+
       setLocalOrders(remoteOrders);
     }
   }, [remoteOrders]);
@@ -228,6 +257,7 @@ export default function AdminOrdersPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8 font-headline">Panel de Pedidos</h1>
+      <audio ref={audioRef} src="/notification.mp3" preload="auto"></audio>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kanbanColumns.map(col => (
           <div key={col.status} className="bg-muted/50 rounded-lg p-4">

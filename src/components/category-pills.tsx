@@ -56,8 +56,10 @@ export function CategoryPills({
                     size="sm"
                     onClick={() => onSelectCategory('all')}
                     className={cn(
-                        "rounded-full flex-shrink-0 snap-start transition-all",
-                        selectedCategory === 'all' ? "shadow-md scale-105" : "border-transparent bg-muted/50 hover:bg-muted"
+                        "rounded-full flex-shrink-0 snap-start transition-all duration-200",
+                        selectedCategory === 'all'
+                            ? "shadow-md scale-105"
+                            : "border-2 border-transparent bg-muted/50 text-foreground hover:text-primary hover:bg-primary/10 hover:border-primary/30 hover:scale-105 hover:shadow-sm"
                     )}
                     data-category="all"
                 >
@@ -76,8 +78,10 @@ export function CategoryPills({
                             size="sm"
                             onClick={() => onSelectCategory(cat.name)}
                             className={cn(
-                                "rounded-full flex-shrink-0 snap-start transition-all",
-                                isSelected ? "shadow-md scale-105" : "border-transparent bg-muted/50 hover:bg-muted"
+                                "rounded-full flex-shrink-0 snap-start transition-all duration-200",
+                                isSelected
+                                    ? "shadow-md scale-105"
+                                    : "border-2 border-transparent bg-muted/50 text-foreground hover:text-primary hover:bg-primary/10 hover:border-primary/30 hover:scale-105 hover:shadow-sm"
                             )}
                             data-category={cat.name}
                         >

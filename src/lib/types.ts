@@ -26,6 +26,12 @@ export type OrderItem = {
 
 export type OrderStatus = 'PENDIENTE_PAGO' | 'EN_PREPARACION' | 'LISTO_REPARTO' | 'COMPLETADO' | 'CANCELADO';
 
+export type OrderFilterMode = 
+  | 'current-shift'  // Turno actual (desde shiftStartAt)
+  | 'today'          // Todos los pedidos de hoy
+  | 'last-7-days'    // Últimos 7 días
+  | 'all';           // Todos los pedidos históricos
+
 export type Order = {
   id: string;
   customerId: string;
@@ -48,5 +54,3 @@ export type ShopSettings = {
   isOpen: boolean;
   shiftStartAt?: Timestamp;
 };
-
-    
